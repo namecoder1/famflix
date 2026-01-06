@@ -12,7 +12,7 @@ export default async function SearchPage({
   return (
     <main className="min-h-screen pt-24 pb-10 px-4 container mx-auto bg-zinc-950">
       <h1 className="text-3xl font-bold text-white mb-8">
-        Risultati per: <span className="text-red-600">"{q}"</span>
+        Risultati per: <span className="text-red-600">&quot;{q}&quot;</span>
       </h1>
 
       {results.length > 0 ? (

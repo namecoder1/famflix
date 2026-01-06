@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: "Guarda film e serie TV gratis",
 };
 
+import { ProfileProvider } from "@/components/ProfileProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,8 +21,10 @@ export default function RootLayout({
   return (
     <html lang="it" className="dark">
       <body className={cn(inter.className, "bg-zinc-950 text-white antialiased")}>
-        <Navbar />
-        {children}
+        <ProfileProvider>
+          <Navbar />
+          {children}
+        </ProfileProvider>
       </body>
     </html>
   );

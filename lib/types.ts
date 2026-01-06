@@ -7,6 +7,8 @@ export interface Movie {
   release_date: string;
   vote_average: number;
   media_type: "movie";
+  progress?: number;
+  totalDuration?: number;
 }
 
 export interface TVShow {
@@ -18,6 +20,8 @@ export interface TVShow {
   first_air_date: string;
   vote_average: number;
   media_type: "tv";
+  progress?: number;
+  totalDuration?: number;
 }
 
 export type ContentItem = Movie | TVShow;
@@ -43,6 +47,7 @@ export interface TVShowDetails extends TVShow {
   seasons: Season[];
   status: string;
   tagline: string;
+  episode_run_time: number[];
 }
 
 export interface Season {
@@ -54,4 +59,66 @@ export interface Season {
   poster_path: string | null;
   season_number: number;
   vote_average: number;
+}
+
+export interface Episode {
+  air_date: string;
+  episode_number: number;
+  id: number;
+  name: string;
+  overview: string;
+  production_code: string;
+  runtime: number;
+  season_number: number;
+  show_id: number;
+  still_path: string | null;
+  vote_average: number;
+  vote_count: number;
+  crew: Crew[];
+  guest_stars: Cast[];
+}
+
+export interface SeasonDetails {
+  _id: string;
+  air_date: string;
+  episodes: Episode[];
+  name: string;
+  overview: string;
+  id: number;
+  poster_path: string | null;
+  season_number: number;
+}
+
+export interface Cast {
+  adult: boolean;
+  gender: number;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
+  profile_path: string | null;
+  character: string;
+  credit_id: string;
+  order: number;
+}
+
+export interface Crew {
+  adult: boolean;
+  gender: number;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
+  profile_path: string | null;
+  credit_id: string;
+  department: string;
+  job: string;
+}
+
+export interface Credits {
+  id: number;
+  cast: Cast[];
+  crew: Crew[];
 }
