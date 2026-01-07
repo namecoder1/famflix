@@ -43,7 +43,7 @@ export default async function MoviePage({
   return (
     <main className="min-h-screen bg-zinc-950 text-white pb-20">
       {/* Hero Section */}
-      <div className="relative h-[70vh] w-full">
+      <div className="relative min-h-[85vh] md:min-h-[70vh] w-full flex items-end">
         <div className="absolute inset-0">
           <img
             src={backdrop}
@@ -52,7 +52,7 @@ export default async function MoviePage({
           />
           <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
         </div>
-        <div className="container mx-auto px-4 h-full flex items-end pb-10 relative z-10">
+        <div className="container mx-auto px-4 pb-10 relative z-10 pt-24 md:pt-0">
           <div className="flex flex-col md:flex-row gap-8 items-end">
             <img
               src={poster}

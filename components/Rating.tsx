@@ -46,6 +46,10 @@ const RatingComponent = ({
   const [hovered, setHovered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  React.useEffect(() => {
+    setRating(initialValue);
+  }, [initialValue]);
+
   const handleChange = async (selectedValue: number) => {
     setRating(selectedValue);
     if (onChange) {

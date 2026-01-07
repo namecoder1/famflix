@@ -60,12 +60,12 @@ export default async function TVShowPage({
   return (
     <main className="min-h-screen bg-zinc-950 text-white pb-20">
       {/* Heavy Hero/Header */}
-      <div className="relative w-full h-[60vh] md:h-[70vh]">
+      <div className="relative w-full min-h-[85vh] md:min-h-[70vh] flex items-end">
         <div className="absolute inset-0">
           <img src={backdrop} alt={show.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/80 to-transparent" />
         </div>
-        <div className="absolute bottom-0 left-0 w-full p-4 md:p-10 z-10">
+        <div className="w-full p-4 md:p-10 z-10 relative pt-24 md:pt-0">
           <div className="container mx-auto">
             <h1 className="text-4xl md:text-6xl font-black mb-4 drop-shadow-lg">{show.name}</h1>
             <div className="flex flex-wrap items-center gap-4 text-sm md:text-base text-zinc-300 mb-6">
@@ -117,7 +117,19 @@ export default async function TVShowPage({
               />
             </div>
             <div className='w-full sm:max-w-sm mt-6'>
-              <RatingContent />
+              <RatingContent
+                tmdbId={show.id}
+                mediaType="tv"
+                profileId={profileId}
+                initialValue={watchStatus?.vote ? parseInt(watchStatus.vote) : 0}
+                metadata={{
+                  title: show.name,
+                  posterPath: show.poster_path || "",
+                  releaseDate: show.first_air_date,
+                  genres: JSON.stringify(show.genres || []),
+                  totalDuration: show.episode_run_time?.[0] || 0
+                }}
+              />
             </div>
           </div>
         </div>
