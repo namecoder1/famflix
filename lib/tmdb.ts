@@ -9,6 +9,8 @@ import {
   SeasonDetails,
 } from "./types";
 
+import { unstable_cache } from "next/cache";
+
 const TMDB_API_KEY = process.env.API_TOKEN_TMDB!;
 const BASE_URL = "https://api.themoviedb.org/3";
 
@@ -31,13 +33,41 @@ async function fetchFromTMDB<T>(
   return res.json();
 }
 
-export async function getTrending(): Promise<ContentItem[]> {
-  const data = await fetchFromTMDB<SearchResults>("/trending/all/week");
-  // Filter out people, only keep movies and tv
-  return data.results.filter(
-    (item) => item.media_type === "movie" || item.media_type === "tv"
-  );
-}
+export const getTrending = unstable_cache(
+  async (timeWindow: "day" | "week" = "week"): Promise<ContentItem[]> => {
+    const data = await fetchFromTMDB<SearchResults>(
+      `/trending/all/${timeWindow}`
+    );
+    // Filter out people, only keep movies and tv
+    return data.results.filter(
+      (item) => item.media_type === "movie" || item.media_type === "tv"
+    );
+  },
+  ["trending-all"],
+  { revalidate: 3600 }
+);
+
+export const getPopularMovies = unstable_cache(
+  async (): Promise<ContentItem[]> => {
+    const data = await fetchFromTMDB<{ results: Omit<Movie, "media_type">[] }>(
+      "/movie/popular"
+    );
+    return data.results.map((item) => ({ ...item, media_type: "movie" }));
+  },
+  ["popular-movies"],
+  { revalidate: 3600 }
+);
+
+export const getPopularTVShows = unstable_cache(
+  async (): Promise<ContentItem[]> => {
+    const data = await fetchFromTMDB<{ results: Omit<TVShow, "media_type">[] }>(
+      "/tv/popular"
+    );
+    return data.results.map((item) => ({ ...item, media_type: "tv" }));
+  },
+  ["popular-tv"],
+  { revalidate: 3600 }
+);
 
 export async function searchContent(query: string): Promise<ContentItem[]> {
   if (!query) return [];
@@ -63,7 +93,9 @@ export function getImageUrl(
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }
 
-export async function getMovieGenres(): Promise<{ id: number; name: string }[]> {
+export async function getMovieGenres(): Promise<
+  { id: number; name: string }[]
+> {
   const data = await fetchFromTMDB<{ genres: { id: number; name: string }[] }>(
     "/genre/movie/list"
   );
@@ -77,8 +109,9 @@ export async function getTVGenres(): Promise<{ id: number; name: string }[]> {
   return data.genres;
 }
 
-
-export async function getMoviesByGenre(genreId: number): Promise<ContentItem[]> {
+export async function getMoviesByGenre(
+  genreId: number
+): Promise<ContentItem[]> {
   const data = await fetchFromTMDB<{ results: Omit<Movie, "media_type">[] }>(
     "/discover/movie",
     {
@@ -88,7 +121,9 @@ export async function getMoviesByGenre(genreId: number): Promise<ContentItem[]> 
   return data.results.map((item) => ({ ...item, media_type: "movie" }));
 }
 
-export async function getTVShowsByGenre(genreId: number): Promise<ContentItem[]> {
+export async function getTVShowsByGenre(
+  genreId: number
+): Promise<ContentItem[]> {
   const data = await fetchFromTMDB<{ results: Omit<TVShow, "media_type">[] }>(
     "/discover/tv",
     {
@@ -102,6 +137,9 @@ export async function getMovieCredits(id: string): Promise<Credits> {
   return fetchFromTMDB<Credits>(`/movie/${id}/credits`);
 }
 
-export async function getSeasonDetails(tvId: string, seasonNumber: number): Promise<SeasonDetails> {
+export async function getSeasonDetails(
+  tvId: string,
+  seasonNumber: number
+): Promise<SeasonDetails> {
   return fetchFromTMDB<SeasonDetails>(`/tv/${tvId}/season/${seasonNumber}`);
 }

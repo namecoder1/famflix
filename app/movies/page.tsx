@@ -1,10 +1,7 @@
 import CategorySection from '@/components/CategorySection';
 import { getMovieGenres, getMoviesByGenre } from '@/lib/tmdb';
-
 import LazyCategoryRow from '@/components/LazyCategoryRow';
-import React from 'react'
-import { cookies } from 'next/headers';
-import { getWatchList } from '@/lib/actions';
+import ContinueWatchingSection from '@/components/ContinueWatchingSection';
 
 const MoviesPage = async () => {
   const genres = await getMovieGenres();
@@ -21,25 +18,6 @@ const MoviesPage = async () => {
     })
   );
 
-  // Get active profile and watching movies
-  const cookieStore = await cookies();
-  const profileId = cookieStore.get('profile_id')?.value;
-  let watchingMovies: any[] = [];
-
-  if (profileId) {
-    const allWatched = await getWatchList(profileId);
-    watchingMovies = allWatched
-      .filter(item => item.status === 'watching' && item.mediaType === 'movie')
-      .map(item => ({
-        ...item,
-        id: item.tmdbId,
-        poster_path: item.posterPath,
-        media_type: item.mediaType,
-        vote_average: item.rating || 0,
-        release_date: item.releaseDate,
-      }));
-  }
-
   return (
     <div className='min-h-screen bg-zinc-950 pt-24 pb-20'>
       <div className='container mx-auto px-4 mb-8'>
@@ -48,13 +26,7 @@ const MoviesPage = async () => {
       </div>
 
       <div className='container mx-auto px-4 flex flex-col gap-8'>
-        {watchingMovies.length > 0 && (
-          <CategorySection
-            title="Film che stai guardando"
-            items={watchingMovies}
-            showStatusToggle={true}
-          />
-        )}
+        <ContinueWatchingSection mediaType="movie" />
 
         {/* Initial Categories (Server Rendered) */}
         {initialCategories.map((category) => (

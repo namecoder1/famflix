@@ -1,10 +1,7 @@
 import CategorySection from '@/components/CategorySection';
 import { getTVGenres, getTVShowsByGenre } from '@/lib/tmdb';
-
 import LazyCategoryRow from '@/components/LazyCategoryRow';
-import React from 'react'
-import { cookies } from 'next/headers';
-import { getWatchList } from '@/lib/actions';
+import ContinueWatchingSection from '@/components/ContinueWatchingSection';
 
 const SeriesPage = async () => {
   const genres = await getTVGenres();
@@ -20,26 +17,6 @@ const SeriesPage = async () => {
     })
   );
 
-  // Get active profile and watching TV
-  const cookieStore = await cookies();
-  const profileId = cookieStore.get('profile_id')?.value;
-  let watchingTV: any[] = [];
-
-  if (profileId) {
-    const allWatched = await getWatchList(profileId);
-    watchingTV = allWatched
-      .filter(item => item.status === 'watching' && item.mediaType === 'tv')
-      .map(item => ({
-        ...item,
-        id: item.tmdbId,
-        poster_path: item.posterPath,
-        media_type: item.mediaType,
-        vote_average: item.rating || 0,
-        first_air_date: item.releaseDate,
-        name: item.title,
-      }));
-  }
-
   return (
     <div className='min-h-screen bg-zinc-950 pt-24 pb-20'>
       <div className='container mx-auto px-4 mb-8'>
@@ -48,13 +25,7 @@ const SeriesPage = async () => {
       </div>
 
       <div className='container mx-auto px-4 flex flex-col gap-8'>
-        {watchingTV.length > 0 && (
-          <CategorySection
-            title="Serie TV che stai guardando"
-            items={watchingTV}
-            showStatusToggle={true}
-          />
-        )}
+        <ContinueWatchingSection mediaType="tv" />
 
         {/* Initial Categories (Server Rendered) */}
         {initialCategories.map((category) => (

@@ -5,9 +5,10 @@ interface CategorySectionProps {
   title: string;
   items: ContentItem[];
   showStatusToggle?: boolean;
+  onStatusChange?: () => void;
 }
 
-export default function CategorySection({ title, items, showStatusToggle = false }: CategorySectionProps) {
+export default function CategorySection({ title, items, showStatusToggle = false, onStatusChange }: CategorySectionProps) {
   if (!items || items.length === 0) return null;
 
   return (
@@ -21,7 +22,7 @@ export default function CategorySection({ title, items, showStatusToggle = false
         <div className="flex overflow-x-auto gap-4 px-4 py-4 snap-x scrollbar-hide">
           {items.map((item) => (
             <div key={item.id} className="w-[160px] md:w-[200px] flex-none snap-start">
-              <MovieCard item={item} showStatusToggle={showStatusToggle} />
+              <MovieCard item={item} showStatusToggle={showStatusToggle} onStatusChange={onStatusChange} />
             </div>
           ))}
         </div>

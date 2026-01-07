@@ -1,32 +1,73 @@
-import CategorySection from '@/components/CategorySection';
-import { cookies } from 'next/headers';
+'use client';
+import { useProfile } from '@/components/ProfileProvider';
 import { getWatchList } from '@/lib/actions';
+import { ContentItem } from '@/lib/types';
 import { Heart } from 'lucide-react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import CategorySection from '@/components/CategorySection';
 
-const FavoritesPage = async () => {
-    // Get active profile
-    const cookieStore = await cookies();
-    const profileId = cookieStore.get('profile_id')?.value;
-    let favorites: any[] = [];
+const FavoritesPage = () => {
+    const { currentProfile } = useProfile();
+    const [favorites, setFavorites] = useState<ContentItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    if (profileId) {
-        const allWatched = await getWatchList(profileId);
-        favorites = allWatched
-            .filter(item => item.isFavorite)
-            .map(item => ({
-                ...item,
-                id: item.tmdbId,
-                poster_path: item.posterPath,
-                media_type: item.mediaType,
-                vote_average: item.rating || 0,
-                release_date: item.releaseDate,
-                first_air_date: item.releaseDate,
-                name: item.mediaType === 'tv' ? item.title : undefined,
-            }));
-    }
+    useEffect(() => {
+        async function fetchFavorites() {
+            if (!currentProfile) {
+                setFavorites([]);
+                setIsLoading(false);
+                return;
+            }
 
-    if (!profileId) {
+            try {
+                // Client-side fetch using Supabase directly to avoid 431 on Server Actions
+                const { createClient } = await import('@/supabase/client');
+                const supabase = createClient();
+
+                const { data, error } = await supabase
+                    .from('user_media')
+                    .select('*')
+                    .eq('profile_id', currentProfile.id);
+
+                if (error) throw error;
+
+                const allWatched = (data || []).map(item => ({
+                    ...item,
+                    isFavorite: item.is_favorite,
+                    posterPath: item.poster_path,
+                    releaseDate: item.release_date,
+                    mediaType: item.media_type,
+                    tmdbId: item.tmdb_id,
+                    totalDuration: item.total_duration,
+                    lastSeason: item.last_season,
+                    lastEpisode: item.last_episode,
+                    vote: item.vote,
+                }));
+
+                const favs = allWatched
+                    .filter(item => item.isFavorite)
+                    .map(item => ({
+                        ...item,
+                        id: item.tmdbId,
+                        poster_path: item.posterPath,
+                        media_type: item.mediaType,
+                        vote_average: item.rating || 0,
+                        release_date: item.releaseDate,
+                        first_air_date: item.releaseDate,
+                        name: item.mediaType === 'tv' ? item.title : undefined,
+                    }));
+                setFavorites(favs);
+            } catch (error) {
+                console.error("Failed to fetch favorites", error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchFavorites();
+    }, [currentProfile]);
+
+    if (!currentProfile) {
         return (
             <div className='min-h-screen bg-black pt-24 pb-10 flex items-center justify-center'>
                 <div className="text-center">
@@ -35,6 +76,14 @@ const FavoritesPage = async () => {
                 </div>
             </div>
         );
+    }
+
+    if (isLoading) {
+         return (
+             <div className='min-h-screen bg-black pt-24 pb-10 flex items-center justify-center'>
+                 <div className="text-white">Caricamento...</div>
+             </div>
+         );
     }
 
     return (
@@ -61,4 +110,4 @@ const FavoritesPage = async () => {
     )
 }
 
-export default FavoritesPage
+export default FavoritesPage;

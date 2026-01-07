@@ -4,7 +4,7 @@ import { getImageUrl } from '@/lib/tmdb';
 import { Star } from 'lucide-react';
 import WatchListButton from './WatchListButton';
 
-export default function MovieCard({ item, showStatusToggle = false }: { item: ContentItem, showStatusToggle?: boolean }) {
+export default function MovieCard({ item, showStatusToggle = false, onStatusChange }: { item: ContentItem, showStatusToggle?: boolean, onStatusChange?: () => void }) {
   const link = item.media_type === 'movie' ? `/movies/${item.id}` : `/tv/${item.id}`;
   const title = item.media_type === 'movie' ? item.title : item.name;
   const date = item.media_type === 'movie' ? item.release_date : item.first_air_date;
@@ -28,6 +28,7 @@ export default function MovieCard({ item, showStatusToggle = false }: { item: Co
           voteAverage={item.vote_average}
           minimal={true}
           showStatusToggle={showStatusToggle}
+          onStatusChange={onStatusChange}
         />
       </div>
 

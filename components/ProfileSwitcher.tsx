@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createProfile, getProfiles, updateProfile, deleteProfile } from '@/lib/actions';
+import { createClient } from '@/supabase/client';
 import { useProfile } from './ProfileProvider';
-import Cookies from 'js-cookie';
 import { User, Plus, X, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -18,6 +17,7 @@ export default function ProfileSwitcher() {
   const { currentProfile, switchProfile } = useProfile();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const supabase = createClient();
 
   // States for different views
   const [view, setView] = useState<'select' | 'create' | 'manage' | 'edit'>('select');
@@ -28,6 +28,13 @@ export default function ProfileSwitcher() {
   const router = useRouter();
 
   useEffect(() => {
+    if (isOpen) {
+      loadProfiles();
+    }
+  }, [isOpen]);
+
+  // Initial load
+  useEffect(() => {
     loadProfiles();
   }, []);
 
@@ -35,8 +42,6 @@ export default function ProfileSwitcher() {
   useEffect(() => {
     if (!isOpen) {
       setView('select');
-      setIsCreating(false); // Legacy cleanup
-      // We can just reset to select
       setEditingProfile(null);
       setNewProfileName('');
       setEditName('');
@@ -44,11 +49,16 @@ export default function ProfileSwitcher() {
   }, [isOpen]);
 
   async function loadProfiles() {
-    const res = await getProfiles();
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (error) {
+        console.error('Failed to load profiles:', error);
+        return;
+    }
+    const res = data || [];
     setProfiles(res);
 
-    // Sync context with cookie if needed (only on initial load really)
-    const cookieId = Cookies.get('profile_id');
+    // Sync context with localStorage if needed
+    const cookieId = localStorage.getItem('profile_id');
     if (cookieId && !currentProfile) {
       const found = res.find(p => p.id === cookieId);
       if (found) {
@@ -60,11 +70,18 @@ export default function ProfileSwitcher() {
   async function handleCreateProfile() {
     if (!newProfileName.trim()) return;
 
-    const res = await createProfile(newProfileName);
-    if (res.success && res.data) {
-      setProfiles([...profiles, res.data]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('profiles').insert({
+        name: newProfileName,
+        user_id: user.id
+    }).select().single();
+
+    if (data && !error) {
+      setProfiles([...profiles, data]);
       setNewProfileName('');
-      switchProfile(res.data);
+      switchProfile(data);
       setIsOpen(false);
     }
   }
@@ -72,8 +89,11 @@ export default function ProfileSwitcher() {
   async function handleUpdateProfile() {
     if (!editingProfile || !editName.trim()) return;
 
-    const res = await updateProfile(editingProfile.id, editName, editingProfile.avatar_url);
-    if (res.success) {
+    const { error } = await supabase.from('profiles')
+        .update({ name: editName, avatar_url: editingProfile.avatar_url })
+        .eq('id', editingProfile.id);
+
+    if (!error) {
       const updatedProfiles = profiles.map(p =>
         p.id === editingProfile.id ? { ...p, name: editName } : p
       );
@@ -93,10 +113,19 @@ export default function ProfileSwitcher() {
     if (!editingProfile) return;
 
     if (confirm('Sei sicuro di voler eliminare questo profilo?')) {
-      const res = await deleteProfile(editingProfile.id);
-      if (res.success) {
+      const { error } = await supabase.from('profiles').delete().eq('id', editingProfile.id);
+      
+      if (!error) {
         const newProfiles = profiles.filter(p => p.id !== editingProfile.id);
         setProfiles(newProfiles);
+
+        if (currentProfile?.id === editingProfile.id) {
+            localStorage.removeItem('profile_id');
+            // Force reload to clear state or just unset
+            window.location.reload(); 
+        } else {
+             localStorage.removeItem('profile_id'); // Just in case
+        }
 
         // If we deleted current, switch to first available or logout
         if (currentProfile?.id === editingProfile.id) {
@@ -104,7 +133,7 @@ export default function ProfileSwitcher() {
             switchProfile(newProfiles[0] as any);
           } else {
             // clear cookie?
-            Cookies.remove('profile_id');
+            localStorage.removeItem('profile_id');
             location.reload();
           }
         }
@@ -229,7 +258,7 @@ export default function ProfileSwitcher() {
                     className="w-full flex items-center justify-between p-2 rounded bg-zinc-800/50 hover:bg-zinc-800 transition-colors group"
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
-                      <div className="w-8 h-8 rounded bg-neutral-200 flex items-center justify-center text-xs font-bold text-white relative">
+                      <div className="w-8 h-8 rounded shrink-0 overflow-hidden relative ring-1 ring-zinc-700">
                         <Image
                           src={profile.avatar_url || '/avatar.png'}
                           alt={profile.name}
@@ -294,7 +323,7 @@ export default function ProfileSwitcher() {
                 </button>
                 <button
                   onClick={handleDeleteProfile}
-                  className="flex-shrink-0 bg-transparent border border-zinc-600 text-zinc-400 hover:border-red-600 hover:text-red-600 p-2 rounded transition-colors"
+                  className="shrink-0 bg-transparent border border-zinc-600 text-zinc-400 hover:border-red-600 hover:text-red-600 p-2 rounded transition-colors"
                   title="Elimina Profilo"
                 >
                   <Trash2 size={18} />
