@@ -81,9 +81,13 @@ export async function getMovieDetails(id: string): Promise<MovieDetails> {
   return fetchFromTMDB<MovieDetails>(`/movie/${id}`);
 }
 
-export async function getTVShowDetails(id: string): Promise<TVShowDetails> {
-  return fetchFromTMDB<TVShowDetails>(`/tv/${id}`);
-}
+export const getTVShowDetails = unstable_cache(
+  async (id: string): Promise<TVShowDetails> => {
+    return fetchFromTMDB<TVShowDetails>(`/tv/${id}`);
+  },
+  ["tv-details"],
+  { revalidate: 3600 }
+);
 
 export function getImageUrl(
   path: string | null,
@@ -137,9 +141,10 @@ export async function getMovieCredits(id: string): Promise<Credits> {
   return fetchFromTMDB<Credits>(`/movie/${id}/credits`);
 }
 
-export async function getSeasonDetails(
-  tvId: string,
-  seasonNumber: number
-): Promise<SeasonDetails> {
-  return fetchFromTMDB<SeasonDetails>(`/tv/${tvId}/season/${seasonNumber}`);
-}
+export const getSeasonDetails = unstable_cache(
+  async (tvId: string, seasonNumber: number): Promise<SeasonDetails> => {
+    return fetchFromTMDB<SeasonDetails>(`/tv/${tvId}/season/${seasonNumber}`);
+  },
+  ["season-details"], // Note: Ideally should include IDs in cache key
+  { revalidate: 3600 }
+);

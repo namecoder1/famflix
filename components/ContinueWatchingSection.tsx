@@ -50,11 +50,13 @@ export default function ContinueWatchingSection({ mediaType }: { mediaType?: 'mo
                   "Continua a guardare";
 
     return (
-        <CategorySection
-            title={title}
-            items={items}
-            showStatusToggle={true}
-            // onStatusChange is no longer strictly needed as UserMediaProvider updates trigger re-render
-        />
+        <div className='mt-20'>
+            <CategorySection
+                title={title}
+                items={items}
+                showStatusToggle={true}
+                // onStatusChange is no longer strictly needed as UserMediaProvider updates trigger re-render
+            />
+        </div>
     );
 }

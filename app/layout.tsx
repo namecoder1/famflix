@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 import { ProfileProvider } from "@/components/ProfileProvider";
 import ProfileGate from "@/components/ProfileGate";
 import { UserMediaProvider } from "@/components/UserMediaProvider";
+import Footer from "@/components/Footer";
 
 export default function RootLayout({
   children,
@@ -27,7 +28,10 @@ export default function RootLayout({
           <ProfileGate>
             <UserMediaProvider>
               <Navbar />
-              {children}
+              <main className="mt-20">
+                {children}              
+              </main>
+              <Footer />
             </UserMediaProvider>
           </ProfileGate>
         </ProfileProvider>

@@ -1,4 +1,5 @@
 import { getTVShowDetails, getImageUrl, getSeasonDetails } from '@/lib/tmdb';
+import WatchListButton from '@/components/WatchListButton';
 import { Star, Calendar, Play } from 'lucide-react';
 import SeasonList from '@/components/SeasonList';
 import Link from 'next/link';
@@ -14,15 +15,12 @@ export default async function TVShowPage({
   const show = await getTVShowDetails(id);
   const backdrop = getImageUrl(show.backdrop_path, 'original');
 
-  // Fetch all seasons in parallel
-  // We filter out any seasons that might not have a season number (rare data issue safeguard)
-  const seasonsPromises = show.seasons.map(s => getSeasonDetails(id, s.season_number));
-  const fullSeasons = await Promise.all(seasonsPromises);
-
   const cookieStore = await cookies();
   const profileId = cookieStore.get('profile_id')?.value;
+
   let watchStatus = null;
-  let episodeProgress: Record<number, { progress: number; duration: number }> = {};
+  let episodeProgress: Record<string, { progress: number; duration: number }> = {};
+  let initialSeasonNumber = 1;
 
   if (profileId) {
     const [status, progressList] = await Promise.all([
@@ -31,29 +29,23 @@ export default async function TVShowPage({
     ]);
     watchStatus = status;
 
-    // Map progress by Episode ID
-    // We iterate over fetched seasons/episodes to match them with DB progress
-    episodeProgress = {};
+    if (watchStatus?.lastSeason) {
+      initialSeasonNumber = watchStatus.lastSeason;
+    }
 
-    // Create a quick lookup for progress by season_episode
-    const progressLookup = new Map();
+    // Map progress by season_episode
     progressList.forEach((p: any) => {
-      progressLookup.set(`${p.season_number}_${p.episode_number}`, p);
-    });
-
-    // Now iterate full seasons to link ID -> Progress
-    fullSeasons.forEach(season => {
-      season.episodes.forEach(episode => {
-        const p = progressLookup.get(`${episode.season_number}_${episode.episode_number}`);
-        if (p) {
-          episodeProgress[episode.id] = {
-            progress: p.progress,
-            duration: p.duration
-          };
-        }
-      });
+      // Use explicit string conversion to match SeasonList key generation
+      const key = `${p.season_number}_${p.episode_number}`;
+      episodeProgress[key] = {
+        progress: p.progress,
+        duration: p.duration
+      };
     });
   }
+
+  // Fetch only the initial season
+  const initialSeason = await getSeasonDetails(id, initialSeasonNumber);
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white pb-20">
@@ -87,21 +79,36 @@ export default async function TVShowPage({
               {show.overview}
             </p>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href={`/tv/${id}/watch?season=1&episode=1`}
-                className="flex items-center gap-3 bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-lg shadow-red-900/20"
+                className="flex w-full sm:w-fit items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-lg shadow-red-900/20"
               >
-                <Play className="fill-white w-6 h-6" />
-                Inizia a guardare
+                Guarda ora
               </Link>
+              <WatchListButton
+                tmdbId={show.id}
+                mediaType="tv"
+                title={show.name}
+                releaseDate={show.first_air_date}
+                posterPath={show.poster_path || ""}
+                voteAverage={show.vote_average}
+                genres={JSON.stringify(show.genres || [])}
+                totalDuration={show.episode_run_time?.[0] || 0}
+              />
             </div>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <SeasonList showId={show.id} seasons={fullSeasons} watchStatus={watchStatus} episodeProgress={episodeProgress} />
+        <SeasonList
+          showId={show.id}
+          seasonsMetadata={show.seasons}
+          initialSeason={initialSeason}
+          watchStatus={watchStatus}
+          episodeProgress={episodeProgress}
+        />
       </div>
     </main>
   );

@@ -1,3 +1,4 @@
+import WatchListButton from '@/components/WatchListButton';
 import { getMovieDetails, getImageUrl, getMovieCredits } from '@/lib/tmdb';
 import { Star, Clock, Calendar, Play } from 'lucide-react';
 import Link from 'next/link';
@@ -66,7 +67,16 @@ export default async function MoviePage({
                   <Play className="fill-white w-6 h-6" />
                   Guarda Ora
                 </Link>
-                {/* Watchlist button could go here */}
+                <WatchListButton
+                  tmdbId={movie.id}
+                  mediaType="movie"
+                  title={movie.title}
+                  releaseDate={movie.release_date}
+                  posterPath={movie.poster_path || ""}
+                  voteAverage={movie.vote_average}
+                  genres={JSON.stringify(movie.genres || [])}
+                  totalDuration={movie.runtime}
+                />
               </div>
             </div>
           </div>

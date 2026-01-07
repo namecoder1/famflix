@@ -90,10 +90,10 @@ export default function WatchListButton({ tmdbId, mediaType, title, releaseDate,
     updateOptimistic({ isFavorite: newFav });
 
     if (!recordExists) {
-        // If it didn't exist, we must create it.
-        // We set status to 'plan_to_watch' implicitly if we are collecting it? 
-        // Logic from before: if !isInWatchlist -> status = 'plan_to_watch'.
-        updateOptimistic({ status: 'plan_to_watch' });
+      // If it didn't exist, we must create it.
+      // We set status to 'plan_to_watch' implicitly if we are collecting it? 
+      // Logic from before: if !isInWatchlist -> status = 'plan_to_watch'.
+      updateOptimistic({ status: 'plan_to_watch' });
     }
 
     // Always update metadata (and ensure existence) preserving current status
@@ -124,7 +124,7 @@ export default function WatchListButton({ tmdbId, mediaType, title, releaseDate,
     const progress = item?.progress || 0;
     const duration = item?.totalDuration || totalDuration || 1; // Avoid division by zero
     const percentage = progress / duration;
-    
+
     // Determine new status: > 80% is completed, otherwise dropped
     // The user said: "se il contenuto ha progress a piu del 80% rispetto a total_duration lo stato va a watched invece che a dropped."
     // "se invece la percentuale è minore allora va a dropped."
@@ -134,42 +134,139 @@ export default function WatchListButton({ tmdbId, mediaType, title, releaseDate,
     // We update to the new status. This will remove it from "Continue Watching" list (which filters for 'watching')
     // and correctly categorize it in the backend.
     updateOptimistic({ status: newStatus });
-    
+
     // We use addToWatchList to update the record with the new status. 
     // This function handles upsert/update correctly and updates timestamp.
     await addToWatchList(currentProfile.id, {
-        tmdbId,
-        mediaType,
-        title,
-        releaseDate,
-        posterPath,
-        rating: voteAverage,
-        status: newStatus,
-        totalDuration,
-        genres
+      tmdbId,
+      mediaType,
+      title,
+      releaseDate,
+      posterPath,
+      rating: voteAverage,
+      status: newStatus,
+      totalDuration,
+      genres
     });
-    
+
     // We might want to trigger a refresh to remove the card from the UI immediately if it's in a Continue Watching section
     router.refresh();
     if (onStatusChange) onStatusChange();
   }
 
+  // Determine button states based on stricter rules
+  let showContinueWatching = false;
+  let continueWatchingIcon = <Eye size={14} />;
+  let continueWatchingDisabled = false;
+  let onContinueWatchingClick = (e: React.MouseEvent) => { };
+  let continueWatchingTitle = "";
+
+  const hasStatus = !!status;
+
+  // Decide if we show the button
+  // New Logic: 
+  // If favorite: 
+  //   - show if completed (Eye, Disabled)
+  //   - show if watching (EyeOff, Enabled)
+  //   - HIDE if dropped or plan_to_watch
+  // If NOT favorite:
+  //   - show if watching, plan_to_watch, dropped (basically if hasStatus)
+
+  if (isFavorite) {
+    if (status === 'completed') {
+      showContinueWatching = true;
+      continueWatchingIcon = <Eye size={14} />;
+      continueWatchingDisabled = true;
+      continueWatchingTitle = "Completato";
+    } else if (status === 'watching' || (status === 'dropped' && false)) {
+      // Note: user specifically said: "se dropped con is_favorite true allora non devi mostrare"
+      // So we ONLY show if watching.
+      showContinueWatching = true;
+      continueWatchingIcon = <EyeOff size={14} />;
+      continueWatchingDisabled = false;
+      continueWatchingTitle = "Non seguire";
+      onContinueWatchingClick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!currentProfile) return;
+        // If watching and favorite -> Drop/Remove from watching?
+        const newStatus = 'dropped';
+        updateOptimistic({ status: newStatus });
+        await addToWatchList(currentProfile.id, {
+          tmdbId, mediaType, title, releaseDate, posterPath, rating: voteAverage,
+          status: newStatus, totalDuration, genres
+        });
+        router.refresh();
+        if (onStatusChange) onStatusChange();
+      };
+    }
+    // Implicitly: dropped and plan_to_watch -> showContinueWatching = false
+  } else {
+    // Not Favorite
+    if (hasStatus) {
+      showContinueWatching = true;
+
+      if (status === 'completed') {
+        continueWatchingIcon = <Eye size={14} />;
+        continueWatchingDisabled = true;
+        continueWatchingTitle = "Completato";
+      } else if (status === 'dropped') {
+        continueWatchingIcon = <Eye size={14} />;
+        continueWatchingDisabled = false;
+        continueWatchingTitle = "Riprendi visione";
+        onContinueWatchingClick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!currentProfile) return;
+          const newStatus = (item?.progress || 0) > 0 ? 'watching' : 'plan_to_watch';
+          updateOptimistic({ status: newStatus });
+          await addToWatchList(currentProfile.id, {
+            tmdbId, mediaType, title, releaseDate, posterPath, rating: voteAverage,
+            status: newStatus, totalDuration, genres
+          });
+          router.refresh();
+          if (onStatusChange) onStatusChange();
+        };
+      } else {
+        // watching or plan_to_watch
+        continueWatchingIcon = <EyeOff size={14} />;
+        continueWatchingDisabled = false;
+        continueWatchingTitle = "Smetti seguire / Rimuovi";
+        onContinueWatchingClick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!currentProfile) return;
+          // For non-favorite, "EyeOff" usually means "Remove from list" completely or "Drop"?
+          // Let's stick to "dropped" for consistency, or if plan_to_watch maybe just remove status?
+          // The previous logic for plan_to_watch was "remove".
+          const newStatus = 'dropped';
+          updateOptimistic({ status: newStatus });
+          await addToWatchList(currentProfile.id, {
+            tmdbId, mediaType, title, releaseDate, posterPath, rating: voteAverage,
+            status: newStatus, totalDuration, genres
+          });
+          router.refresh();
+          if (onStatusChange) onStatusChange();
+        };
+      }
+    }
+  }
+
   if (minimal) {
     return (
       <div className="flex flex-col gap-2">
-        {/* 
-                  REMOVED Plus/Check button as per request ("tieni solo il mi piace e togli il cuore/più").
-                  User wants to keep just "Like".
-                */}
 
-        {/* Show EyeOff only if there is progress/watching status to allow removing it */}
-        {(status === 'watching' || (item?.progress || 0) > 0) && (
+        {showContinueWatching && (
           <button
-            onClick={handleRemoveFromContinueWatching}
-            className="p-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-white hover:text-black transition-all z-10"
-            title="Rimuovi da 'Continua a guardare'"
+            onClick={!continueWatchingDisabled ? onContinueWatchingClick : undefined}
+            disabled={continueWatchingDisabled}
+            className={`p-1.5 rounded-full backdrop-blur-md border border-white/20 transition-all z-10 
+              ${continueWatchingDisabled
+                ? 'bg-white/5 text-gray-500 cursor-not-allowed'
+                : 'bg-black/60 text-white hover:bg-white hover:text-black'}`}
+            title={continueWatchingTitle}
           >
-            <EyeOff size={14} />
+            {continueWatchingIcon}
           </button>
         )}
 
@@ -185,15 +282,34 @@ export default function WatchListButton({ tmdbId, mediaType, title, releaseDate,
   }
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex w-full sm:w-xs flex-row items-center gap-3 ${className}`}>
+      {/* Continue Watching Button for non-minimal */}
+      {showContinueWatching && (
+        <button
+          onClick={!continueWatchingDisabled ? onContinueWatchingClick : undefined}
+          disabled={continueWatchingDisabled}
+          className={`p-4 rounded-2xl w-full sm:w-fit border flex gap-2 items-center justify-center transition-colors 
+            ${continueWatchingDisabled
+              ? 'border-white/10 text-zinc-500 cursor-not-allowed'
+              : 'border-white/20 hover:bg-white/10 text-white'}`}
+          title={continueWatchingTitle}
+        >
+          <p className="sm:hidden">
+            {continueWatchingTitle || "Watchlist"}
+          </p>
+          {continueWatchingIcon}
+        </button>
+      )}
 
       <button
         onClick={handleToggleFavorite}
-        className={`p-2 rounded-full border flex gap-2 items-center px-4 border-white/20 hover:bg-white/10 transition-colors ${isFavorite ? 'text-red-500 border-red-500/50' : 'text-white'}`}
+        className={`p-4 rounded-2xl w-full sm:w-fit border flex gap-2 items-center justify-center border-white/20 hover:bg-white/10 transition-colors ${isFavorite ? 'text-red-500 border-red-500/50' : 'text-white'}`}
         title="Mi piace"
       >
-        Mi piace
-        <ThumbsUp size={20} fill={isFavorite ? "currentColor" : "none"} />
+        <p className="sm:hidden">
+          Mi piace
+        </p>
+        <ThumbsUp size={16} fill={isFavorite ? "currentColor" : "none"} />
       </button>
     </div>
   );

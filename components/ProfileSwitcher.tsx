@@ -10,6 +10,7 @@ import Image from 'next/image';
 type Profile = {
   id: string;
   name: string;
+  short: string;
   avatar_url: string | null;
 };
 
@@ -165,13 +166,18 @@ export default function ProfileSwitcher() {
         className="flex items-center gap-2 text-white p-2 rounded-full transition-colors"
       >
         <div className="w-8 h-8 rounded bg-neutral-200 flex items-center justify-center text-sm font-bold">
-          {currentProfile ? <Image
-            src={currentProfile.avatar_url || '/avatar.png'}
-            alt={currentProfile.name}
-            width={24}
-            height={24}
-            className="w-8 h-8 rounded"
-          /> : <User size={16} />}
+          {currentProfile ? (
+            <div>
+              <Image
+                src={currentProfile.avatar_url || '/avatar.png'}
+                alt={currentProfile.name}
+                width={24}
+                height={24}
+                className="w-8 h-8 rounded"
+              />
+              <span className="text-[8px] font-bold absolute bottom-1 right-1 bg-white h-5 w-5 rounded-full text-black flex items-center justify-center">{currentProfile.short}</span>
+            </div>
+          ) : <User size={16} />}
         </div>
       </button>
 
@@ -205,12 +211,14 @@ export default function ProfileSwitcher() {
                 ))}
               </div>
               <div className="mt-4 pt-4 border-t border-zinc-800 flex flex-col gap-2">
-                <button
-                  onClick={() => setView('create')}
-                  className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors"
-                >
-                  <Plus size={16} /> Aggiungi Profilo
-                </button>
+                {currentProfile?.short === 'T' && (
+                  <button
+                    onClick={() => setView('create')}
+                    className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm transition-colors"
+                  >
+                    <Plus size={16} /> Aggiungi Profilo
+                  </button>
+                )}
                 {profiles.length > 0 && (
                   <button
                     onClick={() => setView('manage')}
