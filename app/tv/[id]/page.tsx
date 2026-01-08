@@ -9,6 +9,21 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { getWatchStatus, getEpisodeProgress } from '@/lib/actions';
 
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const show = await getTVShowDetails(id);
+
+  return {
+    title: `${show.name} | Famflix`,
+    description: show.overview,
+    openGraph: {
+      images: [getImageUrl(show.backdrop_path, 'original')],
+    },
+  };
+}
+
 export default async function TVShowPage({
   params,
 }: {

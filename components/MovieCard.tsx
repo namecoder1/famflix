@@ -10,7 +10,7 @@ export default function MovieCard({ item, showStatusToggle = false, onStatusChan
   const date = item.media_type === 'movie' ? item.release_date : item.first_air_date;
 
   return (
-    <Link href={link} className="group relative block aspect-2/3 overflow-hidden rounded-lg bg-zinc-900 transition-transform hover:scale-105 hover:z-10 hover:shadow-2xl hover:shadow-red-900/20">
+    <Link href={link} className="group relative block aspect-2/3 overflow-hidden rounded-lg bg-zinc-900 transition-transform hover:scale-105 hover:z-10 hover:shadow-2xl hover:shadow-red-900/10">
       <img
         src={getImageUrl(item.poster_path)}
         alt={title}

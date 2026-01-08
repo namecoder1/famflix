@@ -5,6 +5,18 @@ import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const movie = await getMovieDetails(id);
+
+  return {
+    title: `Guarda: ${movie.title} | Famflix`,
+    description: `Guarda ${movie.title} su Famflix`,
+  };
+}
+
 export default async function WatchMoviePage({
   params,
 }: {

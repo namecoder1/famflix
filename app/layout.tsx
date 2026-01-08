@@ -1,14 +1,27 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { cn } from "@/lib/utils";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Famflix | Streaming per la famiglia",
   description: "Guarda film e serie TV insieme alla tua famiglia",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Famflix",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#09090b",
 };
 
 import { ProfileProvider } from "@/components/ProfileProvider";
@@ -29,8 +42,9 @@ export default function RootLayout({
             <UserMediaProvider>
               <Navbar />
               <main className="mt-20">
-                {children}              
+                {children}
               </main>
+              <ServiceWorkerRegister />
               <Footer />
             </UserMediaProvider>
           </ProfileGate>

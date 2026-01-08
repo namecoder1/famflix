@@ -24,9 +24,9 @@ export default function SearchInput({ version = 'desktop' }: { version?: 'mobile
           <Search />
         </button>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent>
-            <DialogTitle>Cerca film o serie</DialogTitle>
-            <form onSubmit={handleSearch} className="relative mt-4">
+          <DialogContent showCloseButton={false} className='rounded-full top-[20%]'>
+            <DialogTitle className='hidden'>Cerca film o serie</DialogTitle>
+            <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
                 placeholder="Cerca film o serie..."

@@ -1,7 +1,13 @@
+import type { Metadata } from 'next';
 import CategorySection from '@/components/CategorySection';
 import { getMovieGenres, getMoviesByGenre } from '@/lib/tmdb';
 import LazyCategoryRow from '@/components/LazyCategoryRow';
 import ContinueWatchingSection from '@/components/ContinueWatchingSection';
+
+export const metadata: Metadata = {
+  title: "Famflix | Film",
+  description: "Esplora la nostra vasta collezione di film per tutta la famiglia",
+};
 
 const MoviesPage = async () => {
   const genres = await getMovieGenres();

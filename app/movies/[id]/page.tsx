@@ -10,6 +10,21 @@ import { Progress } from '@/components/ui/progress';
 import RatingContent from '@/components/Rating';
 
 
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const movie = await getMovieDetails(id);
+
+  return {
+    title: `${movie.title} | Famflix`,
+    description: movie.overview,
+    openGraph: {
+      images: [getImageUrl(movie.backdrop_path, 'original')],
+    },
+  };
+}
+
 export default async function MoviePage({
   params,
 }: {

@@ -61,7 +61,7 @@ export default function CategorySection({
       {layout === 'carousel' ? (
         /* Scroll container with padding to align with container but bleed to edges on mobile if needed */
         <div className="relative">
-          <div className="flex overflow-x-auto gap-4 px-4 py-4 snap-x scrollbar-hide">
+          <div className="flex overflow-x-auto gap-4 px-4 pt-4 pb-10 snap-x scrollbar-hide">
             {items.map((item) => (
               <div key={item.id} className="w-[160px] md:w-[200px] flex-none snap-start">
                 <MovieCard item={item} showStatusToggle={showStatusToggle} onStatusChange={onStatusChange} />

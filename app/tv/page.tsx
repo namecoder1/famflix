@@ -1,7 +1,13 @@
+import type { Metadata } from 'next';
 import CategorySection from '@/components/CategorySection';
 import { getTVGenres, getTVShowsByGenre } from '@/lib/tmdb';
 import LazyCategoryRow from '@/components/LazyCategoryRow';
 import ContinueWatchingSection from '@/components/ContinueWatchingSection';
+
+export const metadata: Metadata = {
+  title: "Famflix | Serie TV",
+  description: "Esplora le migliori serie TV per tutta la famiglia",
+};
 
 const SeriesPage = async () => {
   const genres = await getTVGenres();

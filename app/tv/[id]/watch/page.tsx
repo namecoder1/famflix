@@ -8,6 +8,28 @@ import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 
+import type { Metadata } from 'next';
+
+export async function generateMetadata({
+  params,
+  searchParams
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ season?: string; episode?: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { season, episode } = await searchParams;
+  const show = await getTVShowDetails(id);
+
+  const seasonNum = season ? parseInt(season) : 1;
+  const episodeNum = episode ? parseInt(episode) : 1;
+
+  return {
+    title: `Guarda ${show.name} S${seasonNum}:E${episodeNum} | Famflix`,
+    description: `Guarda ${show.name} Stagione ${seasonNum} Episodio ${episodeNum} su Famflix`,
+  };
+}
+
 export default async function WatchEpisodePage({
   params,
   searchParams,

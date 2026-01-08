@@ -1,5 +1,14 @@
 import { searchContent } from '@/lib/tmdb';
 import MovieCard from '@/components/MovieCard';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q: string }> }): Promise<Metadata> {
+  const { q } = await searchParams;
+  return {
+    title: `Cerca: ${q} | Famflix`,
+    description: `Risultati della ricerca per "${q}" su Famflix`,
+  };
+}
 
 export default async function SearchPage({
   searchParams,

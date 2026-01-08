@@ -52,6 +52,8 @@ export default function VideoPlayer({
   const durationRef = useRef(totalDuration || 0);
   const isPlayingRef = useRef(false);
 
+  const [isHovering, setIsHovering] = useState(false);
+
   useEffect(() => {
     progressRef.current = currentProgress;
   }, [currentProgress]);
@@ -205,7 +207,11 @@ export default function VideoPlayer({
   ]);
 
   return (
-    <div className="relative w-full h-full">
+    <div
+      className="relative w-full h-full"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
       <iframe
         src={iframeSrc}
         className="w-full h-full border-none"
@@ -215,7 +221,7 @@ export default function VideoPlayer({
         referrerPolicy="origin"
       />
 
-      {showNextButton && mediaType === 'tv' && (
+      {(showNextButton || isHovering) && mediaType === 'tv' && (
         <a
           href={nextEpisodeUrl || `/tv/${tmdbId}`}
           className="absolute bottom-24 right-8 z-60 bg-white text-black px-6 py-3 rounded-lg font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
