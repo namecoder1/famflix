@@ -75,7 +75,7 @@ export default async function MoviePage({
               className="hidden md:block w-64 rounded-xl shadow-2xl border border-zinc-800"
             />
             <div className="max-w-3xl mb-4">
-              <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">{movie.title}</h1>
+              <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">{movie.title} </h1>
               <div className="flex flex-wrap items-center gap-6 text-sm md:text-base text-zinc-300 mb-6">
                 <span className="flex items-center gap-2 text-yellow-400 font-bold">
                   <Star className="fill-yellow-400 w-5 h-5" /> {movie.vote_average.toFixed(1)}

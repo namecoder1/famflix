@@ -15,11 +15,11 @@ export async function TrendingSection() {
   // Ideally, Page passes 'featured' to Hero, and 'remaining' to this category.
   // BUT, to split them entirely, we might just slice here too.
   const remaining = trending.slice(1);
-  
+
   return (
     <CategorySection
-       title="Di Tendenza in Italia"
-       items={remaining}
+      title="Di Tendenza in Italia"
+      items={remaining}
     />
   );
 }
@@ -28,8 +28,8 @@ export async function PopularMoviesSection() {
   const popularMovies = await getPopularMovies();
   return (
     <CategorySection
-       title="Film Popolari"
-       items={popularMovies}
+      title="Film Popolari"
+      items={popularMovies}
     />
   );
 }
@@ -38,8 +38,8 @@ export async function PopularTVSection() {
   const popularTV = await getPopularTVShows();
   return (
     <CategorySection
-       title="Serie TV Popolari"
-       items={popularTV}
+      title="Serie TV Popolari"
+      items={popularTV}
     />
   );
 }

@@ -3,6 +3,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { incrementProgress, updateEpisodeProgress, checkUrlAvailability } from '@/lib/actions';
 import { useProfile } from './ProfileProvider';
+import EpisodeSelector from './EpisodeSelector';
+
+interface Episode {
+  episode_number: number;
+  name: string;
+  still_path: string | null;
+  overview: string;
+  runtime: number;
+}
+
+interface Season {
+  season_number: number;
+  name: string;
+  episodes: Episode[];
+}
 
 interface VideoPlayerProps {
   tmdbId: number;
@@ -15,6 +30,7 @@ interface VideoPlayerProps {
   totalDuration?: number;
   genres?: string; // JSON string
   nextEpisodeUrl?: string | null;
+  seasons?: Season[];
 }
 
 export default function VideoPlayer({
@@ -28,6 +44,7 @@ export default function VideoPlayer({
   totalDuration,
   genres,
   nextEpisodeUrl,
+  seasons = [],
 }: VideoPlayerProps) {
   const { currentProfile } = useProfile();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -277,48 +294,38 @@ export default function VideoPlayer({
         />
       )}
 
-      {(showNextButton || isHovering) && mediaType === 'tv' && (
+      {/* Episode Selector - only for TV shows */}
+      {mediaType === 'tv' && season && episode && (
+        <EpisodeSelector
+          tmdbId={tmdbId}
+          currentSeason={season}
+          currentEpisode={episode}
+          seasons={seasons}
+          isVisible={isHovering}
+        />
+      )}
+
+      {/* Next Episode Button - only show at 93%+ OR on hover if there's a next episode */}
+      {showNextButton && nextEpisodeUrl && mediaType === 'tv' && (
         <a
-          href={nextEpisodeUrl || `/tv/${tmdbId}`}
+          href={nextEpisodeUrl}
           className="absolute bottom-24 right-8 z-60 bg-white text-black px-6 py-3 rounded-lg font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
         >
-          {nextEpisodeUrl ? (
-            <>
-              <span>Prossimo Episodio</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-                />
-              </svg>
-            </>
-          ) : (
-            <>
-              <span>Esci</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
-                />
-              </svg>
-            </>
-          )}
+          <span>Prossimo Episodio</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-5 h-5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+            />
+          </svg>
         </a>
       )}
     </div>

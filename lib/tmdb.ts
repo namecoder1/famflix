@@ -10,6 +10,8 @@ import {
   CollectionDetails,
   Person,
   MultiSearchResultItem,
+  MovieReleaseDates,
+  TVContentRatings,
 } from "./types";
 
 import { unstable_cache } from "next/cache";
@@ -36,43 +38,158 @@ async function fetchFromTMDB<T>(
   return res.json();
 }
 
+// Certification utility functions
+export function isContentFamilyFriendly(
+  certification: string,
+  mediaType: "movie" | "tv"
+): boolean {
+  if (!certification) return true; // If no certification, allow it (safer default)
+
+  const cert = certification.toUpperCase();
+
+  if (mediaType === "movie") {
+    // Italian movie certifications (family-friendly)
+    const italianFamilyCerts = ["T", "VM6", "VM12", "G"];
+    // US movie certifications (family-friendly)
+    const usFamilyCerts = ["G", "PG", "PG-13"];
+
+    return italianFamilyCerts.includes(cert) || usFamilyCerts.includes(cert);
+  } else {
+    // TV content ratings (family-friendly)
+    const familyTVRatings = ["TV-Y", "TV-Y7", "TV-G", "TV-PG"];
+
+    return familyTVRatings.includes(cert);
+  }
+}
+
+export async function getMovieCertification(id: number): Promise<string | null> {
+  try {
+    const data = await fetchFromTMDB<MovieReleaseDates>(`/movie/${id}/release_dates`);
+
+    // Prioritize Italian certification
+    const italianRelease = data.results.find(r => r.iso_3166_1 === "IT");
+    if (italianRelease && italianRelease.release_dates.length > 0) {
+      const cert = italianRelease.release_dates.find(rd => rd.certification);
+      if (cert?.certification) return cert.certification;
+    }
+
+    // Fallback to US certification
+    const usRelease = data.results.find(r => r.iso_3166_1 === "US");
+    if (usRelease && usRelease.release_dates.length > 0) {
+      const cert = usRelease.release_dates.find(rd => rd.certification);
+      if (cert?.certification) return cert.certification;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Error fetching movie certification for ${id}:`, error);
+    return null;
+  }
+}
+
+export async function getTVCertification(id: number): Promise<string | null> {
+  try {
+    const data = await fetchFromTMDB<TVContentRatings>(`/tv/${id}/content_ratings`);
+
+    // Prioritize Italian rating
+    const italianRating = data.results.find(r => r.iso_3166_1 === "IT");
+    if (italianRating?.rating) return italianRating.rating;
+
+    // Fallback to US rating
+    const usRating = data.results.find(r => r.iso_3166_1 === "US");
+    if (usRating?.rating) return usRating.rating;
+
+    return null;
+  } catch (error) {
+    console.error(`Error fetching TV certification for ${id}:`, error);
+    return null;
+  }
+}
+
+export async function filterContentByAge(
+  items: ContentItem[],
+  profileAge: number | null
+): Promise<ContentItem[]> {
+  // If no age or age >= 16, show all content
+  if (!profileAge || profileAge >= 16) {
+    return items;
+  }
+
+  // Filter for users under 16
+  const filteredItems: ContentItem[] = [];
+
+  for (const item of items) {
+    try {
+      let certification: string | null = null;
+
+      if (item.media_type === "movie") {
+        certification = await getMovieCertification(item.id);
+      } else if (item.media_type === "tv") {
+        certification = await getTVCertification(item.id);
+      }
+
+      // If we got a certification, check if it's family-friendly
+      if (certification) {
+        if (isContentFamilyFriendly(certification, item.media_type)) {
+          filteredItems.push(item);
+        }
+      } else {
+        // If no certification found, include it (safer default)
+        filteredItems.push(item);
+      }
+    } catch (error) {
+      // On error, include the item (safer default)
+      console.error(`Error filtering item ${item.id}:`, error);
+      filteredItems.push(item);
+    }
+  }
+
+  return filteredItems;
+}
+
 export const getTrending = unstable_cache(
-  async (timeWindow: "day" | "week" = "week"): Promise<ContentItem[]> => {
+  async (timeWindow: "day" | "week" = "week", profileAge: number | null = null): Promise<ContentItem[]> => {
     const data = await fetchFromTMDB<SearchResults>(
       `/trending/all/${timeWindow}`
     );
     // Filter out people, only keep movies and tv
-    return data.results.filter(
+    const items = data.results.filter(
       (item) => item.media_type === "movie" || item.media_type === "tv"
     );
+
+    return filterContentByAge(items, profileAge);
   },
   ["trending-all"],
   { revalidate: 3600 }
 );
 
 export const getPopularMovies = unstable_cache(
-  async (): Promise<ContentItem[]> => {
+  async (profileAge: number | null = null): Promise<ContentItem[]> => {
     const data = await fetchFromTMDB<{ results: Omit<Movie, "media_type">[] }>(
       "/movie/popular"
     );
-    return data.results.map((item) => ({ ...item, media_type: "movie" }));
+    const items = data.results.map((item) => ({ ...item, media_type: "movie" as const }));
+
+    return filterContentByAge(items, profileAge);
   },
   ["popular-movies"],
   { revalidate: 3600 }
 );
 
 export const getPopularTVShows = unstable_cache(
-  async (): Promise<ContentItem[]> => {
+  async (profileAge: number | null = null): Promise<ContentItem[]> => {
     const data = await fetchFromTMDB<{ results: Omit<TVShow, "media_type">[] }>(
       "/tv/popular"
     );
-    return data.results.map((item) => ({ ...item, media_type: "tv" }));
+    const items = data.results.map((item) => ({ ...item, media_type: "tv" as const }));
+
+    return filterContentByAge(items, profileAge);
   },
   ["popular-tv"],
   { revalidate: 3600 }
 );
 
-export async function searchContent(query: string): Promise<ContentItem[]> {
+export async function searchContent(query: string, profileAge: number | null = null): Promise<ContentItem[]> {
   if (!query) return [];
   const data = await fetchFromTMDB<SearchResults>("/search/multi", { query });
 
@@ -103,16 +220,20 @@ export async function searchContent(query: string): Promise<ContentItem[]> {
     }
   }
 
-  return allResults;
+  return filterContentByAge(allResults, profileAge);
 }
 
 export async function getMovieDetails(id: string): Promise<MovieDetails> {
-  return fetchFromTMDB<MovieDetails>(`/movie/${id}`);
+  return fetchFromTMDB<MovieDetails>(`/movie/${id}`, {
+    append_to_response: "release_dates",
+  });
 }
 
 export const getTVShowDetails = unstable_cache(
   async (id: string): Promise<TVShowDetails> => {
-    return fetchFromTMDB<TVShowDetails>(`/tv/${id}`);
+    return fetchFromTMDB<TVShowDetails>(`/tv/${id}`, {
+      append_to_response: "content_ratings",
+    });
   },
   ["tv-details"],
   { revalidate: 3600 }
@@ -145,7 +266,8 @@ export async function getTVGenres(): Promise<{ id: number; name: string }[]> {
 
 export async function getMoviesByGenre(
   genreId: number,
-  page: number = 1
+  page: number = 1,
+  profileAge: number | null = null
 ): Promise<ContentItem[]> {
   const data = await fetchFromTMDB<{ results: Omit<Movie, "media_type">[] }>(
     "/discover/movie",
@@ -154,12 +276,15 @@ export async function getMoviesByGenre(
       page: page.toString(),
     }
   );
-  return data.results.map((item) => ({ ...item, media_type: "movie" }));
+  const items = data.results.map((item) => ({ ...item, media_type: "movie" as const }));
+
+  return filterContentByAge(items, profileAge);
 }
 
 export async function getTVShowsByGenre(
   genreId: number,
-  page: number = 1
+  page: number = 1,
+  profileAge: number | null = null
 ): Promise<ContentItem[]> {
   const data = await fetchFromTMDB<{ results: Omit<TVShow, "media_type">[] }>(
     "/discover/tv",
@@ -168,7 +293,9 @@ export async function getTVShowsByGenre(
       page: page.toString(),
     }
   );
-  return data.results.map((item) => ({ ...item, media_type: "tv" }));
+  const items = data.results.map((item) => ({ ...item, media_type: "tv" as const }));
+
+  return filterContentByAge(items, profileAge);
 }
 
 export async function getMovieCredits(id: string): Promise<Credits> {
@@ -202,52 +329,60 @@ export const getCollectionDetails = unstable_cache(
 );
 
 export const getSimilarMovies = unstable_cache(
-  async (id: string): Promise<ContentItem[]> => {
+  async (id: string, profileAge: number | null = null): Promise<ContentItem[]> => {
     const data = await fetchFromTMDB<{ results: Omit<Movie, "media_type">[] }>(
       `/movie/${id}/similar`
     );
-    return data.results
+    const items = data.results
       .map((item) => ({ ...item, media_type: "movie" as const }))
       .slice(0, 20);
+
+    return filterContentByAge(items, profileAge);
   },
   ["similar-movies"],
   { revalidate: 3600 }
 );
 
 export const getRecommendedMovies = unstable_cache(
-  async (id: string): Promise<ContentItem[]> => {
+  async (id: string, profileAge: number | null = null): Promise<ContentItem[]> => {
     const data = await fetchFromTMDB<{ results: Omit<Movie, "media_type">[] }>(
       `/movie/${id}/recommendations`
     );
-    return data.results
+    const items = data.results
       .map((item) => ({ ...item, media_type: "movie" as const }))
       .slice(0, 20);
+
+    return filterContentByAge(items, profileAge);
   },
   ["recommended-movies"],
   { revalidate: 3600 }
 );
 
 export const getSimilarTVShows = unstable_cache(
-  async (id: string): Promise<ContentItem[]> => {
+  async (id: string, profileAge: number | null = null): Promise<ContentItem[]> => {
     const data = await fetchFromTMDB<{ results: Omit<TVShow, "media_type">[] }>(
       `/tv/${id}/similar`
     );
-    return data.results
+    const items = data.results
       .map((item) => ({ ...item, media_type: "tv" as const }))
       .slice(0, 20);
+
+    return filterContentByAge(items, profileAge);
   },
   ["similar-tv"],
   { revalidate: 3600 }
 );
 
 export const getRecommendedTVShows = unstable_cache(
-  async (id: string): Promise<ContentItem[]> => {
+  async (id: string, profileAge: number | null = null): Promise<ContentItem[]> => {
     const data = await fetchFromTMDB<{ results: Omit<TVShow, "media_type">[] }>(
       `/tv/${id}/recommendations`
     );
-    return data.results
+    const items = data.results
       .map((item) => ({ ...item, media_type: "tv" as const }))
       .slice(0, 20);
+
+    return filterContentByAge(items, profileAge);
   },
   ["recommended-tv"],
   { revalidate: 3600 }

@@ -10,9 +10,9 @@ export default function Home() {
       <Suspense fallback={<div className="h-[50vh] w-full bg-zinc-900 animate-pulse" />}>
         <TrendingHero />
       </Suspense>
-      
+
       <div className="container mx-auto px-4 -mt-32 relative z-20 flex flex-col gap-12">
-        
+
         {/* Client side component - loads immediately if user data exists in provider */}
         <ContinueWatchingSection />
 
@@ -25,7 +25,7 @@ export default function Home() {
         </Suspense>
 
         <Suspense fallback={<div className="h-64 w-full bg-zinc-900/50 rounded-xl animate-pulse" />}>
-           <PopularTVSection />
+          <PopularTVSection />
         </Suspense>
       </div>
     </main>

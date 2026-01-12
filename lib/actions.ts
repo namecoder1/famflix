@@ -768,3 +768,25 @@ export async function checkUrlAvailability(url: string) {
     return true;
   }
 }
+
+export async function fetchMovieCredits(tmdbId: string) {
+  try {
+    const { getMovieCredits } = await import("@/lib/tmdb");
+    const credits = await getMovieCredits(tmdbId);
+    return { success: true, data: credits };
+  } catch (error: any) {
+    console.error("Failed to fetch movie credits:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function fetchTVCredits(tmdbId: string) {
+  try {
+    const { getTVShowCredits } = await import("@/lib/tmdb");
+    const credits = await getTVShowCredits(tmdbId);
+    return { success: true, data: credits };
+  } catch (error: any) {
+    console.error("Failed to fetch TV credits:", error);
+    return { success: false, error: error.message };
+  }
+}

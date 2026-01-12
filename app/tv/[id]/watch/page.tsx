@@ -1,7 +1,7 @@
 // I need to check VideoPlayer.tsx to see how it saves progress
 // Actually, I can just update the `VideoPlayer` server component wrapper to fetch the correct initial time which I already did in previous step (but I need to update it to use `getEpisodeProgress` for granular start time).
 
-import { getTVShowDetails } from '@/lib/tmdb';
+import { getTVShowDetails, getSeasonDetails } from '@/lib/tmdb';
 import { getWatchStatus, getEpisodeProgress } from '@/lib/actions';
 import VideoPlayer from '@/components/VideoPlayer';
 import { ChevronLeft } from 'lucide-react';
@@ -51,6 +51,8 @@ export default async function WatchEpisodePage({
   const profileId = cookieStore.get('profile_id')?.value;
   let startTime = 0;
 
+  // Fetch episode progress for the current profile
+  let episodeProgressMap = new Map<string, { progress: number; duration: number }>();
   if (profileId) {
     // Get granular episode progress
     // We fetch all progress for simplicity or we could have a specific fetcher.
@@ -61,6 +63,15 @@ export default async function WatchEpisodePage({
     if (episodeData) {
       startTime = episodeData.progress;
     }
+
+    // Build progress map for all episodes
+    progressList.forEach((p: any) => {
+      const key = `${p.season_number}-${p.episode_number}`;
+      episodeProgressMap.set(key, {
+        progress: p.progress,
+        duration: p.duration || 0,
+      });
+    });
   }
 
   // Calculate next episode URL
@@ -79,6 +90,32 @@ export default async function WatchEpisodePage({
       }
     }
   }
+
+  // Fetch all season details for the episode selector
+  const seasonsWithEpisodes = await Promise.all(
+    show.seasons
+      .filter((s) => s.season_number > 0) // Skip "Season 0" (specials)
+      .map(async (s) => {
+        const seasonDetails = await getSeasonDetails(id, s.season_number);
+        return {
+          season_number: s.season_number,
+          name: s.name,
+          episodes: seasonDetails.episodes.map((ep) => {
+            const progressKey = `${s.season_number}-${ep.episode_number}`;
+            const progressData = episodeProgressMap.get(progressKey);
+            return {
+              episode_number: ep.episode_number,
+              name: ep.name,
+              still_path: ep.still_path,
+              overview: ep.overview,
+              runtime: ep.runtime,
+              progress: progressData?.progress,
+              duration: progressData?.duration,
+            };
+          }),
+        };
+      })
+  );
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black z-50">
@@ -100,6 +137,7 @@ export default async function WatchEpisodePage({
         genres={JSON.stringify(show.genres || [])}
         startTime={startTime}
         nextEpisodeUrl={nextEpisodeUrl}
+        seasons={seasonsWithEpisodes}
       />
     </div>
   );

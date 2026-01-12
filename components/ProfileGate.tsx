@@ -3,22 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useProfile } from './ProfileProvider';
 import { createClient } from '@/supabase/client';
-import { Plus, User, Pencil, RefreshCw } from 'lucide-react';
-import { createAvatar } from '@dicebear/core';
-import { dylan, lorelei } from '@dicebear/collection';
+import { Plus, User, Pencil } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
-
-type Profile = {
-  id: string;
-  name: string;
-  short: string;
-  avatar_url: string | null;
-};
+import { Profile } from '@/lib/types';
+import AvatarPicker from './AvatarPicker';
 
 export default function ProfileGate({ children }: { children: React.ReactNode }) {
   const { currentProfile, switchProfile } = useProfile();
@@ -40,9 +33,7 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
 
-  const generateAvatar = (seed: string) => {
-    return createAvatar(dylan, { seed }).toDataUri();
-  };
+
 
   useEffect(() => {
     let mounted = true;
@@ -93,16 +84,12 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
   }, []);
 
   const initCreateProfile = () => {
-    const seed = Math.random().toString(36).substring(7);
-    setNewProfileAvatar(generateAvatar(seed));
+    setNewProfileAvatar('');
     setNewProfileName('');
     setIsCreating(true);
   };
 
-  const randomizeCreateAvatar = () => {
-    const seed = Math.random().toString(36).substring(7);
-    setNewProfileAvatar(generateAvatar(seed));
-  };
+
 
   const handleCreateProfile = async () => {
     if (!newProfileName.trim()) return;
@@ -136,10 +123,7 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
     setPreviewAvatar(profile.avatar_url || '');
   };
 
-  const randomizeEditAvatar = () => {
-    const seed = Math.random().toString(36).substring(7);
-    setPreviewAvatar(generateAvatar(seed));
-  };
+
 
   const saveEdit = async () => {
     if (!editingProfile || !editName.trim()) return;
@@ -187,10 +171,10 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
 
   return (
     <div className="fixed inset-0 z-50 bg-zinc-950 flex flex-col items-center justify-center animate-in fade-in duration-500">
-      <div className="w-full max-w-4xl px-4 text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-12">Chi sta guardando?</h1>
+      <div className="w-full max-w-6xl px-4 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-8">Chi sta guardando?</h1>
 
-        <div className="flex flex-wrap items-center justify-center gap-8 px-6">
+        <div className="flex flex-wrap items-center justify-center gap-6 px-6">
           {profiles.map(profile => (
             <div key={profile.id} className="relative group">
               <button
@@ -203,16 +187,16 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
                 }}
                 className="flex flex-col items-center gap-4 transition-transform hover:scale-105"
               >
-                <div className="relative w-24 h-24 md:w-40 md:h-40 rounded-4xl overflow-hidden ring-4 ring-transparent group-hover:ring-neutral-300 transition-all">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-4xl overflow-hidden ring-4 ring-transparent group-hover:ring-neutral-300 transition-all">
                   {profile.avatar_url ? (
                     <div>
                       <Image
                         src={profile.avatar_url}
                         alt={profile.name}
                         fill
-                        className="object-cover"
+                        className="object-cover bg-white"
                       />
-                      <span className="text-[10px] z-100 font-bold absolute bottom-0 right-0 bg-white h-8 w-8 rounded-tl-2xl text-black flex items-center justify-center">{profile.short}</span>
+                      <span className="text-[10px] z-100 font-bold absolute bottom-0 right-0 bg-white h-8 w-8 rounded-tl-2xl border-t border-l border-neutral-400 text-black flex items-center justify-center">{profile.short}</span>
                     </div>
                   ) : (
                     <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
@@ -243,12 +227,12 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
               Let's make it standard: It works always. 
               But wait, the user said "disattiva il select del profilo".
           */}
-          {!isManaging && (
+          {isManaging && (
             <button
               onClick={initCreateProfile}
               className="group flex flex-col items-center gap-4 transition-transform hover:scale-105"
             >
-              <div className="w-24 h-24 md:w-40 md:h-40 rounded-4xl bg-zinc-900 border-2 border-transparent group-hover:bg-zinc-800 flex items-center justify-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-4xl bg-zinc-900 border-2 border-transparent group-hover:bg-zinc-800 flex items-center justify-center">
                 <Plus className="w-16 h-16 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
               </div>
               <span className="text-zinc-500 group-hover:text-zinc-300 text-lg md:text-xl transition-colors">
@@ -278,29 +262,9 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
-                {/* Avatar Section */}
-                <div className="relative group">
-                  <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-zinc-800 shadow-xl">
-                    {newProfileAvatar ? (
-                      <Image src={newProfileAvatar} alt="Preview" fill className="object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                        <User className="w-12 h-12 text-zinc-400" />
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={randomizeCreateAvatar}
-                    className="absolute bottom-0 right-0 p-2.5 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 rounded-full text-white transition-colors shadow-lg"
-                    title="Cambia avatar"
-                  >
-                    <RefreshCw size={16} />
-                  </button>
-                </div>
-
+              <div className="space-y-6">
                 {/* Form Section */}
-                <div className="flex-1 w-full space-y-6">
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor='name' className="text-zinc-400 font-medium">Nome</Label>
                     <Input
@@ -314,22 +278,28 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
                     />
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-2">
-                    <Button
-                      variant='ghost'
-                      onClick={() => setIsCreating(false)}
-                      className="text-zinc-400 hover:text-white hover:bg-zinc-900"
-                    >
-                      Annulla
-                    </Button>
-                    <Button
-                      onClick={handleCreateProfile}
-                      disabled={!newProfileName.trim()}
-                      className='bg-red-600 hover:bg-red-700 text-white min-w-[100px]'
-                    >
-                      Crea
-                    </Button>
-                  </div>
+                  {/* Avatar Picker */}
+                  <AvatarPicker
+                    currentAvatar={newProfileAvatar}
+                    onAvatarSelect={setNewProfileAvatar}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button
+                    variant='ghost'
+                    onClick={() => setIsCreating(false)}
+                    className="text-zinc-400 hover:text-white hover:bg-zinc-900"
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    onClick={handleCreateProfile}
+                    disabled={!newProfileName.trim() || !newProfileAvatar}
+                    className='bg-red-600 hover:bg-red-700 text-white min-w-[100px]'
+                  >
+                    Crea
+                  </Button>
                 </div>
               </div>
             </DialogContent>
@@ -344,29 +314,9 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
               <DialogTitle className="text-2xl font-bold text-white mb-4">Modifica Profilo</DialogTitle>
             </DialogHeader>
 
-            <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start">
-              {/* Avatar Section */}
-              <div className="relative group">
-                <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-zinc-800 shadow-xl">
-                  {previewAvatar ? (
-                    <Image src={previewAvatar} alt="Preview" fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                      <User className="w-12 h-12 text-zinc-400" />
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={randomizeEditAvatar}
-                  className="absolute bottom-0 right-0 p-2.5 bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 rounded-full text-white transition-colors shadow-lg"
-                  title="Cambia avatar"
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-
+            <div className="space-y-6">
               {/* Form Section */}
-              <div className="flex-1 w-full space-y-6">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor='edit-name' className="text-zinc-400 font-medium">Nome</Label>
                   <Input
@@ -378,22 +328,29 @@ export default function ProfileGate({ children }: { children: React.ReactNode })
                     className="bg-zinc-900 border-zinc-800 focus:border-red-600 focus:ring-red-600/20 h-11 text-lg"
                   />
                 </div>
-                <div className="flex justify-end gap-3 pt-2">
-                  <Button
-                    variant='ghost'
-                    onClick={() => setEditingProfile(null)}
-                    className="text-zinc-400 hover:text-white hover:bg-zinc-900"
-                  >
-                    Annulla
-                  </Button>
-                  <Button
-                    onClick={saveEdit}
-                    disabled={!editName.trim()}
-                    className='bg-red-600 hover:bg-red-700 text-white min-w-[100px]'
-                  >
-                    Salva
-                  </Button>
-                </div>
+
+                {/* Avatar Picker */}
+                <AvatarPicker
+                  currentAvatar={previewAvatar}
+                  onAvatarSelect={setPreviewAvatar}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant='ghost'
+                  onClick={() => setEditingProfile(null)}
+                  className="text-zinc-400 hover:text-white hover:bg-zinc-900"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  onClick={saveEdit}
+                  disabled={!editName.trim()}
+                  className='bg-red-600 hover:bg-red-700 text-white min-w-[100px]'
+                >
+                  Salva
+                </Button>
               </div>
             </div>
           </DialogContent>

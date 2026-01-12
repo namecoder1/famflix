@@ -3,13 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 // import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-
-type Profile = {
-  id: string;
-  name: string;
-  short: string;
-  avatar_url: string | null;
-};
+import { Profile } from '@/lib/types';
 
 type ProfileContextType = {
   currentProfile: Profile | null;

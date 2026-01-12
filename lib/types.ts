@@ -26,6 +26,16 @@ export interface TVShow {
   last_episode?: number;
 }
 
+export interface Profile {
+  id: string;
+  name: string;
+  short: string;
+  default_language: string;
+  default_subtitles: string;
+  age: string
+  avatar_url: string | null;
+}
+
 export type ContentItem = Movie | TVShow;
 
 export interface Person {
@@ -51,6 +61,7 @@ export interface MovieDetails extends Movie {
   tagline: string;
   status: string;
   belongs_to_collection: CollectionInfo | null;
+  release_dates?: MovieReleaseDates;
 }
 
 export interface TVShowDetails extends TVShow {
@@ -82,6 +93,7 @@ export interface TVShowDetails extends TVShow {
   }[];
   original_language: string;
   type: string;
+  content_ratings?: TVContentRatings;
 }
 
 export interface Season {
@@ -172,3 +184,31 @@ export interface CollectionDetails {
   backdrop_path: string | null;
   parts: Movie[];
 }
+
+// Certification and Content Rating Types
+export interface ReleaseDateResult {
+  iso_3166_1: string; // Country code (e.g., "IT", "US")
+  release_dates: {
+    certification: string;
+    iso_639_1: string;
+    note: string;
+    release_date: string;
+    type: number;
+  }[];
+}
+
+export interface MovieReleaseDates {
+  id: number;
+  results: ReleaseDateResult[];
+}
+
+export interface ContentRating {
+  iso_3166_1: string; // Country code
+  rating: string; // e.g., "TV-PG", "TV-14"
+}
+
+export interface TVContentRatings {
+  id: number;
+  results: ContentRating[];
+}
+

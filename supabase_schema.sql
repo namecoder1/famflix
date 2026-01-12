@@ -12,6 +12,7 @@ create table profiles (
   name text not null,
   short text,
   avatar_url text, -- Store as URL or reference to storage path
+  age text, -- Birthdate in DD/MM/YYYY format for age-based content filtering
   created_at timestamptz default now()
 );
 

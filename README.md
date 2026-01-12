@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎬 Famflix
 
-## Getting Started
+Una piattaforma moderna per gestire e guardare la tua collezione di film e serie TV.
 
-First, run the development server:
+## 📚 Documentazione
+
+### Per Utenti Finali
+- **[SETUP_GUIDA.md](./SETUP_GUIDA.md)** - Guida completa in italiano per installare e configurare Famflix sul tuo computer (consigliata per utenti non-tech)
+
+### Per Self-Hosting
+- **[README_SELFHOST.md](./README_SELFHOST.md)** - Guida per configurare Famflix come server casalingo accessibile da remoto via Tailscale
+
+## 🚀 Quick Start
+
+### Prerequisiti
+- Docker Desktop installato
+- Credenziali Supabase (database)
+- API Token TMDB (The Movie Database)
+
+### Installazione Rapida
+
+1. **Clona la repository:**
+   ```bash
+   git clone https://github.com/tuousername/famflix.git
+   cd famflix
+   ```
+
+2. **Configura le credenziali:**
+   ```bash
+   cp .env.local.example .env.local
+   # Modifica .env.local con le tue credenziali
+   ```
+
+3. **Avvia con Docker:**
+   ```bash
+   # Su Mac: doppio click su start.command
+   # Oppure manualmente:
+   docker-compose --env-file .env.local up -d --build
+   ```
+
+4. **Accedi all'app:**
+   Apri il browser su [http://localhost:3000](http://localhost:3000)
+
+## 🛠️ Sviluppo
+
+Per sviluppatori che vogliono modificare il codice:
 
 ```bash
+# Installa le dipendenze
+npm install
+
+# Avvia il server di sviluppo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build di produzione
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📋 Variabili d'Ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Crea un file `.env.local` con le seguenti variabili (vedi `.env.local.example` per dettagli):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://tuo-progetto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=la-tua-chiave-supabase
+API_TOKEN_TMDB=la-tua-api-key-tmdb
+```
 
-## Learn More
+## 🗄️ Database
 
-To learn more about Next.js, take a look at the following resources:
+Il progetto usa Supabase come database. Lo schema SQL è disponibile in:
+- `supabase_schema.sql` - Schema completo del database
+- `movie_progress_migration.sql` - Migrazione per il tracking dei progressi
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🎯 Funzionalità
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- ✅ Autenticazione utenti con Supabase
+- ✅ Multi-profilo (come Netflix)
+- ✅ Ricerca film e serie TV tramite TMDB
+- ✅ Tracking progressi di visione
+- ✅ Liste personalizzate (Preferiti, Continua a guardare)
+- ✅ Player video integrato
+- ✅ Design responsive e moderno
+- ✅ PWA (Progressive Web App)
 
-## Deploy on Vercel
+## 🤝 Condivisione
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Se vuoi condividere questo progetto con amici o familiari, segui la **[SETUP_GUIDA.md](./SETUP_GUIDA.md)** che spiega passo-passo come installare tutto.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📝 Tecnologie
+
+- **Frontend**: Next.js 16, React 19, TailwindCSS 4
+- **Backend**: Next.js Server Actions
+- **Database**: Supabase (PostgreSQL)
+- **API**: TMDB (The Movie Database)
+- **Deployment**: Docker, Docker Compose
+- **Autenticazione**: Supabase Auth
+
+## 📄 Licenza
+
+Progetto personale - Uso privato
+

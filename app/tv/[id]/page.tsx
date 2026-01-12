@@ -82,7 +82,7 @@ export default async function TVShowPage({
         </div>
         <div className="w-full p-4 md:p-10 z-10 relative pt-24 md:pt-0">
           <div className="container mx-auto">
-            <h1 className="text-4xl md:text-6xl font-black mb-4 drop-shadow-lg">{show.name}</h1>
+            <h1 className="text-4xl md:text-6xl font-black mb-4 drop-shadow-lg">{show.name} </h1>
             <div className="flex flex-wrap items-center gap-4 text-sm md:text-base text-zinc-300 mb-6">
               <span className="flex items-center gap-1 text-yellow-400 font-bold">
                 <Star className="fill-yellow-400 w-5 h-5" /> {show.vote_average.toFixed(1)}

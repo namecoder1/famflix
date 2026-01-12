@@ -3,15 +3,8 @@ import { LogOut, UserCircle, User as UserIcon, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { User } from '@supabase/supabase-js';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { logout } from '@/supabase/actions';
-
-type Profile = {
-  id: string;
-  name: string;
-  short: string;
-  avatar_url: string | null;
-};
 
 export default function ProfileSwitcher({ user }: { user: User | null }) {
   const { currentProfile, switchProfile } = useProfile();

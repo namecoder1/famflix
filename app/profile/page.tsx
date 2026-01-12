@@ -10,12 +10,12 @@ import { it } from 'date-fns/locale';
 import { useProfile } from '@/components/ProfileProvider';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/tmdb';
+import { defineUserAge } from '@/lib/utils';
 
 
 const ProfilePage = () => {
   const { userMedia, isLoading } = useUserMedia();
-  const { currentProfile, switchProfile } = useProfile();
-
+  const { currentProfile } = useProfile();
 
   const {
     history,
@@ -77,6 +77,8 @@ const ProfilePage = () => {
   if (isLoading) {
     return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-500">Loading profile...</div>;
   }
+
+  console.log(defineUserAge(currentProfile?.age))
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white pb-20 pt-24 px-4">
