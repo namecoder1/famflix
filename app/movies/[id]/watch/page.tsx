@@ -23,7 +23,7 @@ export default async function WatchMoviePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const movie = await getMovieDetails(id);
+  const movie = await getMovieDetails(id);  
 
   const cookieStore = await cookies();
   const profileId = cookieStore.get('profile_id')?.value;

@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useUserMedia } from '@/components/UserMediaProvider';
 import { motion } from 'motion/react';
 import { Clock, Film, Tv, BarChart3, History, Play } from 'lucide-react';
 import Link from 'next/link';
-import { User } from '@supabase/supabase-js';
-import { createClient } from '@/supabase/client';
+import { formatDistanceToNow } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { useProfile } from '@/components/ProfileProvider';
 import Image from 'next/image';
 
@@ -42,7 +42,11 @@ const ProfilePage = () => {
       // Duration (accumulated progress or estimate)
       // If we have progress, use it.
       if (item.progress) {
-        totalDuration += item.progress; // in seconds
+        if (item.mediaType === 'tv') {
+          totalDuration += item.progress * 60; // Convert minutes to seconds
+        } else {
+          totalDuration += item.progress; // Already in seconds
+        }
       }
 
       // Genres
@@ -103,12 +107,12 @@ const ProfilePage = () => {
           />
           <StatsCard
             icon={<Film className="w-6 h-6 text-purple-400" />}
-            label="Film Guardati"
+            label="Film Preferiti"
             value={stats.movieCount.toString()}
           />
           <StatsCard
             icon={<Tv className="w-6 h-6 text-green-400" />}
-            label="Serie TV"
+            label="Serie TV Preferite"
             value={stats.tvCount.toString()}
           />
           <StatsCard
@@ -136,14 +140,14 @@ const ProfilePage = () => {
                     key={item.tmdbId}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-800/80 transition-colors group"
+                    className="flex rounded-xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-800/80 transition-colors group"
                   >
                     <img
                       src={getImageUrl(item.posterPath)}
                       alt={item.title}
-                      className="w-20 h-30 object-cover rounded-md shadow-md"
+                      className="w-40 h-40 object-cover rounded-xl rounded-r-none shadow-md"
                     />
-                    <div className="flex-1 flex flex-col justify-between py-1">
+                    <div className="flex-1 p-4 flex flex-col justify-between">
                       <div>
                         <div className="flex justify-between items-start">
                           <h3 className="font-bold text-lg group-hover:text-red-500 transition-colors line-clamp-1">{item.title}</h3>
@@ -173,7 +177,7 @@ const ProfilePage = () => {
 
                       <div className="flex items-center justify-between mt-4">
                         <div className="text-xs text-zinc-500">
-                          Ultima visione: {new Date(item.updatedAt).toLocaleDateString()}
+                          Aggiornato: {formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true, locale: it })}
                         </div>
                         <Link
                           href={item.mediaType === 'movie' ? `/movies/${item.tmdbId}` : `/tv/${item.tmdbId}`}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { incrementProgress, updateEpisodeProgress } from '@/lib/actions';
+import { incrementProgress, updateEpisodeProgress, checkUrlAvailability } from '@/lib/actions';
 import { useProfile } from './ProfileProvider';
 
 interface VideoPlayerProps {
@@ -34,13 +34,39 @@ export default function VideoPlayer({
 
   // Initial URL construction - this state will ensure the iframe src is stable
   // even if the parent re-renders with a new startTime.
-  const [iframeSrc] = useState(() => {
-    const baseUrl =
-      mediaType === 'movie'
-        ? `https://vixsrc.to/movie/${tmdbId}`
-        : `https://vixsrc.to/tv/${tmdbId}/${season}/${episode}`;
-    return `${baseUrl}?startAt=${startTime}`;
-  });
+  // Initial URL construction - this state will ensure the iframe src is stable
+  // even if the parent re-renders with a new startTime.
+  const [iframeSrc, setIframeSrc] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const verifySource = async () => {
+      setIsLoading(true);
+      const primaryBase =
+        mediaType === 'movie'
+          ? `https://vixsrc.to/movie/${tmdbId}`
+          : `https://vixsrc.to/tv/${tmdbId}/${season}/${episode}`;
+      const primaryUrl = `${primaryBase}?startAt=${startTime}`;
+
+      // Check primary source availability (without query params typically, but here we check base or full?)
+      // Usually checking the base URL is safer/simpler for 404 detection.
+      const isAvailable = await checkUrlAvailability(primaryBase);
+
+      if (isAvailable) {
+        setIframeSrc(primaryUrl);
+      } else {
+        console.log('Primary source failed (404), switching to fallback');
+        const fallbackUrl =
+          mediaType === 'movie'
+            ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}`
+            : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${season}/${episode}`;
+        setIframeSrc(fallbackUrl);
+      }
+      setIsLoading(false);
+    };
+
+    verifySource();
+  }, [tmdbId, season, episode, mediaType, startTime]);
 
   // Track local progress because we need to send absolute value to episode_progress
   const [currentProgress, setCurrentProgress] = useState(startTime);
@@ -212,14 +238,44 @@ export default function VideoPlayer({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <iframe
-        src={iframeSrc}
-        className="w-full h-full border-none"
-        title={title}
-        allowFullScreen
-        allow="autoplay; encrypted-media"
-        referrerPolicy="origin"
-      />
+      {isLoading ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          {posterPath && (
+            <>
+              <div
+                className="absolute inset-0 bg-cover bg-center opacity-30 blur-sm"
+                style={{ backgroundImage: `url(https://image.tmdb.org/t/p/original${posterPath})` }}
+              />
+              <img
+                src={`https://image.tmdb.org/t/p/w500${posterPath}`}
+                alt={title}
+                className="relative z-10 w-48 rounded-lg shadow-2xl animate-pulse"
+              />
+            </>
+          )}
+          <div className="absolute inset-0 flex items-center justify-center z-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+          </div>
+        </div>
+      ) : iframeSrc.includes('vidsrc.cc') ? (
+        <iframe
+          src={iframeSrc}
+          className="w-full h-full border-none"
+          title={title}
+          allowFullScreen
+          referrerPolicy="origin"
+          sandbox="allow-forms allow-scripts allow-same-origin"
+        />
+      ) : (
+        <iframe
+          src={iframeSrc}
+          className="w-full h-full border-none"
+          title={title}
+          allowFullScreen
+          allow="autoplay; encrypted-media"
+          referrerPolicy="origin"
+        />
+      )}
 
       {(showNextButton || isHovering) && mediaType === 'tv' && (
         <a

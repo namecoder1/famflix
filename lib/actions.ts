@@ -469,6 +469,13 @@ export async function updateEpisodeProgress(
     genres?: string;
   }
 ) {
+  console.log("SERVER: updateEpisodeProgress called", {
+    profileId,
+    tmdbId,
+    season,
+    episode,
+    progress,
+  });
   try {
     const supabase = await createClient();
 
@@ -534,6 +541,13 @@ export async function incrementProgress(
   },
   progressValue?: number // Explicit progress in seconds
 ) {
+  console.log("SERVER: incrementProgress called", {
+    profileId,
+    tmdbId,
+    season,
+    episode,
+    progressValue,
+  });
   try {
     const supabase = await createClient();
 
@@ -599,6 +613,12 @@ export async function updateMovieProgress(
     genres?: string;
   }
 ) {
+  console.log("SERVER: updateMovieProgress called", {
+    profileId,
+    tmdbId,
+    progress,
+    duration,
+  });
   try {
     const supabase = await createClient();
 
@@ -655,6 +675,7 @@ export async function getMovieProgress(profileId: string, tmdbId: number) {
 }
 
 export async function checkAndCompleteMovie(profileId: string, tmdbId: number) {
+  console.log("SERVER: checkAndCompleteMovie called", { profileId, tmdbId });
   try {
     const supabase = await createClient();
 
@@ -720,5 +741,30 @@ export async function checkAndCompleteMovie(profileId: string, tmdbId: number) {
   } catch (error: any) {
     console.error("Failed to check and complete movie:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function checkUrlAvailability(url: string) {
+  console.log("SERVER: checkUrlAvailability checking:", url);
+  try {
+    const response = await fetch(url, {
+      method: "HEAD",
+      cache: "no-store",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    });
+    console.log(
+      "SERVER: checkUrlAvailability result:",
+      response.status !== 404
+    );
+    return response.status !== 404;
+  } catch (error) {
+    console.error("Failed to check URL availability:", error);
+    // If we can't check, we assume it might work (or let the client handle it)
+    // But if we want to be safe and fallback on network errors, we could return false.
+    // However, for now, let's assume false only on explicit 404.
+    return true;
   }
 }
