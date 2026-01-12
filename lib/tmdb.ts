@@ -8,6 +8,8 @@ import {
   Credits,
   SeasonDetails,
   CollectionDetails,
+  Person,
+  MultiSearchResultItem,
 } from "./types";
 
 import { unstable_cache } from "next/cache";
@@ -73,9 +75,35 @@ export const getPopularTVShows = unstable_cache(
 export async function searchContent(query: string): Promise<ContentItem[]> {
   if (!query) return [];
   const data = await fetchFromTMDB<SearchResults>("/search/multi", { query });
-  return data.results.filter(
-    (item) => item.media_type === "movie" || item.media_type === "tv"
-  );
+
+  const allResults: ContentItem[] = [];
+  const seenIds = new Set<string>();
+
+  const addResult = (item: ContentItem) => {
+    // Determine unique ID
+    const uniqueId = `${item.media_type}-${item.id}`;
+    if (!seenIds.has(uniqueId)) {
+      seenIds.add(uniqueId);
+      allResults.push(item);
+    }
+  };
+
+  for (const item of data.results) {
+    if (item.media_type === "movie" || item.media_type === "tv") {
+      addResult(item);
+    } else if (item.media_type === "person") {
+      // If it's a person, add their known_for works
+      if (item.known_for) {
+        item.known_for.forEach((known) => {
+          if (known.media_type === "movie" || known.media_type === "tv") {
+            addResult(known);
+          }
+        });
+      }
+    }
+  }
+
+  return allResults;
 }
 
 export async function getMovieDetails(id: string): Promise<MovieDetails> {
@@ -92,9 +120,10 @@ export const getTVShowDetails = unstable_cache(
 
 export function getImageUrl(
   path: string | null,
-  size: "w500" | "original" = "w500"
+  size: "w500" | "original" = "w500",
+  type: "content" | "user" = "content"
 ) {
-  if (!path) return "/placeholder.png"; // Make sure to handle this in UI or have a placeholder asset
+  if (!path) return type === "content" ? "/not-found.png" : "/user-not-found.png";
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }
 
@@ -115,24 +144,28 @@ export async function getTVGenres(): Promise<{ id: number; name: string }[]> {
 }
 
 export async function getMoviesByGenre(
-  genreId: number
+  genreId: number,
+  page: number = 1
 ): Promise<ContentItem[]> {
   const data = await fetchFromTMDB<{ results: Omit<Movie, "media_type">[] }>(
     "/discover/movie",
     {
       with_genres: genreId.toString(),
+      page: page.toString(),
     }
   );
   return data.results.map((item) => ({ ...item, media_type: "movie" }));
 }
 
 export async function getTVShowsByGenre(
-  genreId: number
+  genreId: number,
+  page: number = 1
 ): Promise<ContentItem[]> {
   const data = await fetchFromTMDB<{ results: Omit<TVShow, "media_type">[] }>(
     "/discover/tv",
     {
       with_genres: genreId.toString(),
+      page: page.toString(),
     }
   );
   return data.results.map((item) => ({ ...item, media_type: "tv" }));

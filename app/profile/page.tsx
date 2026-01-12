@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useProfile } from '@/components/ProfileProvider';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/tmdb';
 
 
 const ProfilePage = () => {
@@ -72,8 +73,6 @@ const ProfilePage = () => {
     };
   }, [userMedia]);
 
-  const getImageUrl = (path: string | null) =>
-    path ? `https://image.tmdb.org/t/p/w500${path}` : '/placeholder.png'; // Simple helper
 
   if (isLoading) {
     return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-500">Loading profile...</div>;
@@ -143,7 +142,7 @@ const ProfilePage = () => {
                     className="flex rounded-xl bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-800/80 transition-colors group"
                   >
                     <img
-                      src={getImageUrl(item.posterPath)}
+                      src={getImageUrl(item.posterPath, 'w500', 'content')}
                       alt={item.title}
                       className="w-40 h-40 object-cover rounded-xl rounded-r-none shadow-md"
                     />
@@ -151,8 +150,8 @@ const ProfilePage = () => {
                       <div>
                         <div className="flex justify-between items-start">
                           <h3 className="font-bold text-lg group-hover:text-red-500 transition-colors line-clamp-1">{item.title}</h3>
-                          <span className="text-xs text-zinc-500 bg-zinc-950 px-2 py-1 rounded-full border border-zinc-800 uppercase">
-                            {item.mediaType}
+                          <span className="text-xs text-zinc-500 bg-zinc-950 px-2 py-1 rounded-full border border-zinc-800">
+                            {item.mediaType === 'movie' ? 'Film' : 'Serie TV'}
                           </span>
                         </div>
                         {item.mediaType === 'tv' && item.lastSeason && (
@@ -208,7 +207,7 @@ const ProfilePage = () => {
                   <div key={genre.name} className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="font-medium text-zinc-200">{genre.name}</span>
-                      <span className="text-zinc-500">{genre.count} titoli</span>
+                      <span className="text-zinc-500">{(genre.count / history.length * 100).toFixed(1)}%</span>
                     </div>
                     <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                       <motion.div

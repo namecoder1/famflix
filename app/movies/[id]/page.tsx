@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: `${movie.title} | Famflix`,
     description: movie.overview,
     openGraph: {
-      images: [getImageUrl(movie.backdrop_path, 'original')],
+      images: [getImageUrl(movie.backdrop_path, 'original', 'content')],
     },
   };
 }
@@ -33,8 +33,8 @@ export default async function MoviePage({
   const { id } = await params;
   const movie = await getMovieDetails(id);
   const credits = await getMovieCredits(id);
-  const backdrop = getImageUrl(movie.backdrop_path, 'original');
-  const poster = getImageUrl(movie.poster_path, 'w500');
+  const backdrop = getImageUrl(movie.backdrop_path, 'original', 'content');
+  const poster = getImageUrl(movie.poster_path, 'w500', 'content');
 
   const similarMovies = await getSimilarMovies(id);
   const collection = movie.belongs_to_collection ? await getCollectionDetails(movie.belongs_to_collection.id) : null;
@@ -164,7 +164,7 @@ export default async function MoviePage({
               {cast.map(actor => (
                 <div key={actor.id} className="bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 flex items-center gap-3 hover:bg-zinc-800/80 transition-colors">
                   <img
-                    src={getImageUrl(actor.profile_path, 'w500')}
+                    src={getImageUrl(actor.profile_path, 'w500', 'user')}
                     alt={actor.name}
                     className="w-12 h-12 rounded-full object-cover"
                   />

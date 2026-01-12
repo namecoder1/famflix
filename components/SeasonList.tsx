@@ -187,7 +187,7 @@ export default function SeasonList({
                     <div className="relative w-full sm:w-64 aspect-video rounded-lg overflow-hidden shrink-0 bg-zinc-800">
                       {episode.still_path ? (
                         <img
-                          src={getImageUrl(episode.still_path, 'w500')}
+                          src={getImageUrl(episode.still_path, 'w500', 'content')}
                           alt={episode.name}
                           className={cn(
                             "w-full h-full object-cover transition-transform duration-500 group-hover:scale-110",

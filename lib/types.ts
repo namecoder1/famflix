@@ -28,9 +28,19 @@ export interface TVShow {
 
 export type ContentItem = Movie | TVShow;
 
+export interface Person {
+  id: number;
+  name: string;
+  media_type: "person";
+  profile_path: string | null;
+  known_for: ContentItem[];
+}
+
+export type MultiSearchResultItem = Movie | TVShow | Person;
+
 export interface SearchResults {
   page: number;
-  results: ContentItem[];
+  results: MultiSearchResultItem[];
   total_pages: number;
   total_results: number;
 }

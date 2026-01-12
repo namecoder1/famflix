@@ -14,6 +14,7 @@ const FavoritesPage = () => {
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [sortOrder, setSortOrder] = React.useState<'newest' | 'oldest'>('newest');
+  const [selectedGenre, setSelectedGenre] = React.useState<string>('all');
 
   const filteredItems = useMemo(() => {
     if (!currentProfile) return { movies: [], series: [] };
@@ -50,6 +51,14 @@ const FavoritesPage = () => {
       );
     }
 
+    // Filter by genre
+    if (selectedGenre && selectedGenre !== 'all') {
+      items = items.filter(item =>
+        // @ts-ignore - genres exists on UserMediaItem but not explicitly on ContentItem in some contexts
+        item.genres && item.genres.some((g: any) => g.name === selectedGenre)
+      );
+    }
+
     // Sort items
     items.sort((a, b) => {
       const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
@@ -62,7 +71,21 @@ const FavoritesPage = () => {
     const series = items.filter(item => item.mediaType === 'tv');
 
     return { movies, series };
-  }, [userMedia, currentProfile, searchQuery, sortOrder]);
+  }, [userMedia, currentProfile, searchQuery, sortOrder, selectedGenre]);
+
+  const allGenres = useMemo(() => {
+    const genres = new Set<string>();
+    Array.from(userMedia.values())
+      .filter(item => item.isFavorite) // Only favorites
+      .forEach(item => {
+        if (item.genres && Array.isArray(item.genres)) {
+          item.genres.forEach(g => {
+            if (g.name) genres.add(g.name);
+          });
+        }
+      });
+    return Array.from(genres).sort();
+  }, [userMedia]);
 
   if (!currentProfile) {
     return (
@@ -89,23 +112,37 @@ const FavoritesPage = () => {
 
           {/* Controls */}
           {hasFavorites && (
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
               <Input
                 type="text"
                 placeholder="Cerca nei preferiti..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              
-              <Select value={sortOrder} onValueChange={setSortOrder as any}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Ordina per" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='newest'>Più recenti</SelectItem>
-                  <SelectItem value='oldest'>Meno recenti</SelectItem>
-                </SelectContent>
-              </Select>
+
+              <div className='flex w-full items-center gap-2'>
+                <Select value={sortOrder} onValueChange={setSortOrder as any}>
+                  <SelectTrigger className='w-full'>
+                    <SelectValue placeholder="Ordina per" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='newest'>Più recenti</SelectItem>
+                    <SelectItem value='oldest'>Meno recenti</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Tutti i generi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i generi</SelectItem>
+                    {allGenres.map(genre => (
+                      <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
         </div>

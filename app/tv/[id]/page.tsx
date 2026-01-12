@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: `${show.name} | Famflix`,
     description: show.overview,
     openGraph: {
-      images: [getImageUrl(show.backdrop_path, 'original')],
+      images: [getImageUrl(show.backdrop_path, 'original', 'content')],
     },
   };
 }
@@ -32,7 +32,7 @@ export default async function TVShowPage({
   const { id } = await params;
   const show = await getTVShowDetails(id);
   const credits = await getTVShowCredits(id);
-  const backdrop = getImageUrl(show.backdrop_path, 'original');
+  const backdrop = getImageUrl(show.backdrop_path, 'original', 'content');
   const similarShows = await getSimilarTVShows(id);
 
   const cookieStore = await cookies();
@@ -188,7 +188,7 @@ export default async function TVShowPage({
                   {cast.map(actor => (
                     <div key={actor.id} className="bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 flex items-center gap-3 hover:bg-zinc-800/80 transition-colors">
                       <img
-                        src={getImageUrl(actor.profile_path, 'w500')}
+                        src={getImageUrl(actor.profile_path, 'w500', 'user')}
                         alt={actor.name}
                         className="w-12 h-12 rounded-full object-cover bg-zinc-800"
                       />
@@ -210,7 +210,7 @@ export default async function TVShowPage({
                         {company.logo_path ? (
                           <div className="h-12 w-auto bg-white/10 p-2 rounded flex items-center justify-center">
                             <img
-                              src={getImageUrl(company.logo_path, 'original')}
+                              src={getImageUrl(company.logo_path, 'original', 'content')}
                               alt={company.name}
                               className="h-full object-contain filter invert opacity-80"
                             />
@@ -252,7 +252,7 @@ export default async function TVShowPage({
                           <div key={n.id} className="h-6">
                             {n.logo_path ? (
                               <img
-                                src={getImageUrl(n.logo_path, 'w500')}
+                                src={getImageUrl(n.logo_path, 'w500', 'content')}
                                 alt={n.name}
                                 className="h-full object-contain filter invert opacity-70"
                               />

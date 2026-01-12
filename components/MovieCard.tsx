@@ -12,7 +12,7 @@ export default function MovieCard({ item, showStatusToggle = false, onStatusChan
   return (
     <Link href={link} className="group relative block aspect-2/3 overflow-hidden rounded-lg bg-zinc-900 transition-transform hover:scale-105 hover:z-10 hover:shadow-2xl hover:shadow-red-900/10">
       <img
-        src={getImageUrl(item.poster_path)}
+        src={getImageUrl(item.poster_path, 'w500', 'content')}
         alt={title}
         className="h-full w-full object-cover transition-opacity group-hover:opacity-80"
         loading="lazy"

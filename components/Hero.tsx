@@ -8,7 +8,7 @@ export default function Hero({ item }: { item: ContentItem }) {
   const link = item.media_type === 'movie' ? `/movies/${item.id}` : `/tv/${item.id}`;
   const title = item.media_type === 'movie' ? item.title : item.name;
   const date = item.media_type === 'movie' ? item.release_date : item.first_air_date;
-  const backdrop = getImageUrl(item.backdrop_path, 'original');
+  const backdrop = getImageUrl(item.backdrop_path, 'original', 'content');
 
   return (
     <div className="relative h-[70vh] mb-10 w-full flex items-center">
